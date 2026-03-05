@@ -1,0 +1,112 @@
+# ==========================================
+# ENUMS
+# ==========================================
+
+enum UserType {
+    ADMIN
+    REGULAR
+}
+
+# ==========================================
+# INTERFACES
+# ==========================================
+
+interface User {
+    id: ID!
+    username: String!
+    email: String!
+    userType: UserType!
+    permissions: String!
+    dashboardUrl: String!
+    createdAt: String!
+}
+
+# ==========================================
+# TYPES - AdminUser
+# ==========================================
+
+type AdminUser implements User {
+    id: ID!
+    username: String!
+    email: String!
+    userType: UserType!
+    permissions: String!
+    dashboardUrl: String!
+    createdAt: String!
+    adminLevel: String!
+    department: String!
+}
+
+# ==========================================
+# TYPES - RegularUser
+# ==========================================
+
+type RegularUser implements User {
+    id: ID!
+    username: String!
+    email: String!
+    userType: UserType!
+    permissions: String!
+    dashboardUrl: String!
+    createdAt: String!
+    subscriptionType: String!
+    newsletterSubscribed: Boolean!
+}
+
+# ==========================================
+# UNION TYPE - IMPORTANTE: Debe estar ANTES de usarla en Mutation/Query
+# ==========================================
+
+union UserResult = AdminUser | RegularUser
+
+# ==========================================
+# INPUTS
+# ==========================================
+
+input CreateUserInput {
+    username: String!
+    email: String!
+    password: String!
+    userType: String!
+    adminLevel: String
+    department: String
+    subscriptionType: String
+    newsletterSubscribed: Boolean
+}
+
+input UpdateUserInput {
+    username: String
+    email: String
+    adminLevel: String
+    department: String
+    subscriptionType: String
+    newsletterSubscribed: Boolean
+}
+
+# ==========================================
+# QUERIES
+# ==========================================
+
+type Query {
+    allUsers: [UserResult!]!
+    userById(id: ID!): UserResult
+}
+
+# ==========================================
+# MUTATIONS
+# ==========================================
+
+type Mutation {
+    createUser(input: CreateUserInput!): UserResult!
+    updateUser(id: ID!, input: UpdateUserInput!): UserResult!
+    deleteUser(id: ID!): Boolean!
+}
+
+# ==========================================
+# SCHEMA ROOT - OBLIGATORIO
+# ==========================================
+
+schema {
+    query: Query
+    mutation: Mutation
+}

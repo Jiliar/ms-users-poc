@@ -1,0 +1,83 @@
+# ==========================================
+# SCALAR CUSTOM (UUID)
+# ==========================================
+scalar UUID
+
+# ==========================================
+# ENUMS
+# ==========================================
+
+enum UserType {
+    ADMIN
+    REGULAR
+}
+
+# ==========================================
+# TYPE PRINCIPAL
+# ==========================================
+
+type UserDTO {
+    id: UUID!
+    username: String!
+    email: String!
+    userType: UserType!
+    permissions: String!
+    dashboardUrl: String!
+    createdAt: String!
+    adminLevel: String
+    department: String
+    subscriptionType: String
+    newsletterSubscribed: Boolean
+}
+
+# ==========================================
+# INPUTS
+# ==========================================
+
+input CreateUserInput {
+    username: String!
+    email: String!
+    password: String!
+    userType: String!
+    adminLevel: String
+    department: String
+    subscriptionType: String
+    newsletterSubscribed: Boolean
+}
+
+input UpdateUserInput {
+    username: String
+    email: String
+    adminLevel: String
+    department: String
+    subscriptionType: String
+    newsletterSubscribed: Boolean
+}
+
+# ==========================================
+# QUERIES
+# ==========================================
+
+type Query {
+    allUsers: [UserDTO!]!
+    userById(id: UUID!): UserDTO
+}
+
+# ==========================================
+# MUTATIONS
+# ==========================================
+
+type Mutation {
+    createUser(input: CreateUserInput!): UserDTO!
+    updateUser(id: UUID!, input: UpdateUserInput!): UserDTO!
+    deleteUser(id: UUID!): Boolean!
+}
+
+# ==========================================
+# SCHEMA ROOT
+# ==========================================
+
+schema {
+    query: Query
+    mutation: Mutation
+}

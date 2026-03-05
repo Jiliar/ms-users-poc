@@ -1,0 +1,43 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: um-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER:-um_admin}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-SecureP@ssw0rd2024!}
+      POSTGRES_DB: ${DB_NAME:-usermanagement}
+    ports:
+      - "5432:5432"
+    volumes:
+      # Usamos un volumen nombrado de Docker (más fiable en Linux)
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-um_admin} -d ${DB_NAME:-usermanagement}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - um-network
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: um-pgadmin
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@example.com
+      PGADMIN_DEFAULT_PASSWORD: admin123
+    ports:
+      - "5050:80"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - um-network
+
+volumes:
+  postgres_data:
+
+networks:
+  um-network:
+    driver: bridge

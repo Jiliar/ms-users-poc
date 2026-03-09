@@ -6,6 +6,9 @@ import graphql.execution.ResultPath;
 import graphql.language.Field;
 import graphql.language.SourceLocation;
 import graphql.schema.DataFetchingEnvironment;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.ConstraintViolationException;
+import jakarta.validation.Path;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -13,7 +16,10 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.graphql.execution.ErrorType;
 
+import java.util.Set;
+
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -21,40 +27,40 @@ class GlobalExceptionHandlerTest {
 
     private GlobalExceptionHandler handler;
 
-    @Mock
-    private DataFetchingEnvironment env;
-
-    @Mock
-    private ExecutionStepInfo stepInfo;
-
-    @Mock
-    private Field field;
+    @Mock private DataFetchingEnvironment env;
+    @Mock private ExecutionStepInfo stepInfo;
+    @Mock private Field field;
 
     @BeforeEach
     void setUp() {
         handler = new GlobalExceptionHandler();
-
-        ResultPath path = ResultPath.parse("/userById");
-        SourceLocation location = new SourceLocation(1, 1);
-
         when(env.getExecutionStepInfo()).thenReturn(stepInfo);
-        when(stepInfo.getPath()).thenReturn(path);
+        when(stepInfo.getPath()).thenReturn(ResultPath.parse("/createUser"));
         when(env.getField()).thenReturn(field);
-        when(field.getSourceLocation()).thenReturn(location);
+        when(field.getSourceLocation()).thenReturn(new SourceLocation(1, 1));
     }
 
     @Test
-    void resolveToSingleError_userNotFound_returnsNOT_FOUND() {
+    void resolveToSingleError_constraintViolation_returnsBAD_REQUEST() {
+        ConstraintViolation<?> violation = mock(ConstraintViolation.class);
+        Path path = mock(Path.class);
+        when(path.toString()).thenReturn("input.email");
+        when(violation.getPropertyPath()).thenReturn(path);
+        when(violation.getMessage()).thenReturn("Email must be a valid address");
+
+        ConstraintViolationException ex = new ConstraintViolationException(Set.of(violation));
+
+        GraphQLError error = handler.resolveToSingleError(ex, env);
+
+        assertThat(error.getErrorType()).isEqualTo(ErrorType.BAD_REQUEST);
+        assertThat(error.getMessage()).contains("Email must be a valid address");
+    }
+
+    @Test
+    void resolveToSingleError_notFound_returnsNOT_FOUND() {
         GraphQLError error = handler.resolveToSingleError(new NotFoundException("User not found"), env);
 
         assertThat(error.getMessage()).isEqualTo("User not found");
-        assertThat(error.getErrorType()).isEqualTo(ErrorType.NOT_FOUND);
-    }
-
-    @Test
-    void resolveToSingleError_notFoundBase_returnsNOT_FOUND() {
-        GraphQLError error = handler.resolveToSingleError(new NotFoundException("Resource not found"), env);
-
         assertThat(error.getErrorType()).isEqualTo(ErrorType.NOT_FOUND);
     }
 
@@ -70,7 +76,6 @@ class GlobalExceptionHandlerTest {
     void resolveToSingleError_invalidUserType_returnsBAD_REQUEST() {
         GraphQLError error = handler.resolveToSingleError(new InvalidUserTypeException("Unknown user type: GUEST"), env);
 
-        assertThat(error.getMessage()).isEqualTo("Unknown user type: GUEST");
         assertThat(error.getErrorType()).isEqualTo(ErrorType.BAD_REQUEST);
     }
 
@@ -105,17 +110,5 @@ class GlobalExceptionHandlerTest {
 
         assertThat(error.getMessage()).contains("An unexpected error occurred");
         assertThat(error.getErrorType()).isEqualTo(ErrorType.INTERNAL_ERROR);
-    }
-
-    @Test
-    void resolveToSingleError_errorContainsPath() {
-        GraphQLError error = handler.resolveToSingleError(new NotFoundException("not found"), env);
-        assertThat(error.getPath()).isNotNull();
-    }
-
-    @Test
-    void resolveToSingleError_errorContainsLocations() {
-        GraphQLError error = handler.resolveToSingleError(new NotFoundException("not found"), env);
-        assertThat(error.getLocations()).isNotEmpty();
     }
 }

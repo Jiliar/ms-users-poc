@@ -17,34 +17,36 @@ public class CreateUserRequest {
 
     @NotBlank(message = "Username is required")
     @Size(min = 3, max = 50, message = "Username must be between 3 and 50 characters")
+    @Pattern(regexp = "^[a-zA-Z0-9._-]+$", message = "Username can only contain letters, numbers, dots, hyphens and underscores")
     private String username;
 
     @NotBlank(message = "Email is required")
-    @Email(message = "Email must be valid")
+    @Email(message = "Email must be a valid address")
     private String email;
 
-    /**
-     * Contraseña en texto plano que llega del cliente.
-     * NUNCA se almacena así. Se encripta inmediatamente.
-     *
-     * Requisitos de seguridad:
-     * - Mínimo 8 caracteres
-     * - Al menos 1 mayúscula
-     * - Al menos 1 minúscula
-     * - Al menos 1 número
-     * - Al menos 1 carácter especial
-     */
     @NotBlank(message = "Password is required")
-    @Size(min = 8, max = 100, message = "Password must be at least 8 characters")
+    @Size(min = 8, max = 100, message = "Password must be between 8 and 100 characters")
     @Pattern(
             regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]+$",
-            message = "Password must contain at least: 1 uppercase, 1 lowercase, 1 number, 1 special character"
+            message = "Password must contain at least 1 uppercase, 1 lowercase, 1 number and 1 special character (@$!%*?&)"
     )
-    private String password;  // Texto plano que llega del cliente
+    private String password;
 
+    @NotBlank(message = "User type is required")
+    @Pattern(regexp = "^(ADMIN|REGULAR)$", message = "User type must be ADMIN or REGULAR")
     private String userType;
+
+    @Size(max = 50, message = "Admin level must not exceed 50 characters")
     private String adminLevel;
+
+    @Size(max = 100, message = "Department must not exceed 100 characters")
     private String department;
+
+    @Pattern(
+            regexp = "^(FREE|BASIC|PREMIUM|ENTERPRISE)$",
+            message = "Subscription type must be FREE, BASIC, PREMIUM or ENTERPRISE"
+    )
     private String subscriptionType;
+
     private Boolean newsletterSubscribed;
 }

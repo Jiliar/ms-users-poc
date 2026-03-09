@@ -8,16 +8,19 @@ import bizz.addonai.users.msuserspoc.exceptions.BadGatewayException;
 import bizz.addonai.users.msuserspoc.exceptions.InternalServerErrorException;
 import bizz.addonai.users.msuserspoc.exceptions.NotFoundException;
 import bizz.addonai.users.msuserspoc.services.IUserService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.graphql.data.method.annotation.Argument;
 import org.springframework.graphql.data.method.annotation.MutationMapping;
 import org.springframework.graphql.data.method.annotation.QueryMapping;
 import org.springframework.stereotype.Controller;
+import org.springframework.validation.annotation.Validated;
 
 import java.util.List;
 import java.util.UUID;
 
 @Controller
+@Validated
 @RequiredArgsConstructor
 public class UserControllerImpl implements IUserController {
 
@@ -43,7 +46,7 @@ public class UserControllerImpl implements IUserController {
     }
 
     @MutationMapping
-    public UserDTO createUser(@Argument CreateUserRequest input) {
+    public UserDTO createUser(@Argument @Valid CreateUserRequest input) {
         try {
             return userService.createUser(input);
         } catch (InternalServerErrorException e) {
@@ -52,7 +55,7 @@ public class UserControllerImpl implements IUserController {
     }
 
     @MutationMapping
-    public UserDTO updateUser(@Argument UUID id, @Argument UpdateUserRequest input) {
+    public UserDTO updateUser(@Argument UUID id, @Argument @Valid UpdateUserRequest input) {
         try {
             return userService.updateUser(id, input)
                     .orElseThrow(() -> new NotFoundException("User not found with id: " + id));

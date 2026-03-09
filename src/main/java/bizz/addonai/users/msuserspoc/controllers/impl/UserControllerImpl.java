@@ -4,6 +4,9 @@ import bizz.addonai.users.msuserspoc.controllers.IUserController;
 import bizz.addonai.users.msuserspoc.dtos.CreateUserRequest;
 import bizz.addonai.users.msuserspoc.dtos.UpdateUserRequest;
 import bizz.addonai.users.msuserspoc.dtos.UserDTO;
+import bizz.addonai.users.msuserspoc.exceptions.BadGatewayException;
+import bizz.addonai.users.msuserspoc.exceptions.InternalServerErrorException;
+import bizz.addonai.users.msuserspoc.exceptions.NotFoundException;
 import bizz.addonai.users.msuserspoc.services.IUserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.graphql.data.method.annotation.Argument;
@@ -20,39 +23,53 @@ public class UserControllerImpl implements IUserController {
 
     private final IUserService userService;
 
-    // Queries
     @QueryMapping
     public List<UserDTO> allUsers() {
-        return userService.getAllUsers();
+        try {
+            return userService.getAllUsers();
+        } catch (InternalServerErrorException e) {
+            throw new BadGatewayException(e.getMessage(), e);
+        }
     }
 
     @QueryMapping
     public UserDTO userById(@Argument UUID id) {
-        return userService.getUserById(id);
+        try {
+            return userService.getUserById(id)
+                    .orElseThrow(() -> new NotFoundException("User not found with id: " + id));
+        } catch (InternalServerErrorException e) {
+            throw new BadGatewayException(e.getMessage(), e);
+        }
     }
 
-    // Mutations
     @MutationMapping
     public UserDTO createUser(@Argument CreateUserRequest input) {
         try {
-            UserDTO user = userService.createUser(input);
-            if (user == null) {
-                throw new RuntimeException("No se pudo crear el usuario");
-            }
-            return user;
-        } catch (Exception e) {
-            throw new RuntimeException("Error al crear usuario: " + e.getMessage(), e);
+            return userService.createUser(input);
+        } catch (InternalServerErrorException e) {
+            throw new BadGatewayException(e.getMessage(), e);
         }
     }
 
     @MutationMapping
     public UserDTO updateUser(@Argument UUID id, @Argument UpdateUserRequest input) {
-        return userService.updateUser(id, input);
+        try {
+            return userService.updateUser(id, input)
+                    .orElseThrow(() -> new NotFoundException("User not found with id: " + id));
+        } catch (InternalServerErrorException e) {
+            throw new BadGatewayException(e.getMessage(), e);
+        }
     }
 
     @MutationMapping
     public Boolean deleteUser(@Argument UUID id) {
-        userService.deleteUser(id);
-        return true;
+        try {
+            if (!userService.deleteUser(id)) {
+                throw new NotFoundException("User not found with id: " + id);
+            }
+            return true;
+        } catch (InternalServerErrorException e) {
+            throw new BadGatewayException(e.getMessage(), e);
+        }
     }
 }

@@ -4,10 +4,12 @@ spring:
   application:
     name: user-management
   graphql:
+    graphiql:
+      enabled: true
+      path: /graphiql
     schema:
       introspection:
         enabled: true
-        path: /graphiql
     websocket:
       path: /graphql-ws            # Subscriptions WebSocket
 

@@ -3,20 +3,23 @@ package bizz.addonai.users.msuserspoc.services.impl;
 import bizz.addonai.users.msuserspoc.dtos.CreateUserRequest;
 import bizz.addonai.users.msuserspoc.dtos.UpdateUserRequest;
 import bizz.addonai.users.msuserspoc.dtos.UserDTO;
-import bizz.addonai.users.msuserspoc.exceptions.UserNotFoundException;
+import bizz.addonai.users.msuserspoc.exceptions.ConflictException;
+import bizz.addonai.users.msuserspoc.exceptions.InternalServerErrorException;
 import bizz.addonai.users.msuserspoc.models.AdminUser;
 import bizz.addonai.users.msuserspoc.models.RegularUser;
 import bizz.addonai.users.msuserspoc.models.UserEntity;
 import bizz.addonai.users.msuserspoc.repositories.IUserRepository;
 import bizz.addonai.users.msuserspoc.services.IUserService;
-import bizz.addonai.users.msuserspoc.services.factories.impl.UserFactory;
 import bizz.addonai.users.msuserspoc.services.factories.IUserFactoryProvider;
+import bizz.addonai.users.msuserspoc.services.factories.impl.UserFactory;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -33,62 +36,59 @@ public class UserServiceImpl implements IUserService {
     public UserDTO createUser(CreateUserRequest request) {
         log.info("Iniciando registro de usuario: {}", request.getUsername());
         validateUniqueConstraints(request);
-        log.debug("Encriptando contraseña...");
         String encryptedPassword = passwordService.encryptPassword(request.getPassword());
         UserFactory factory = factoryProvider.getFactory(request.getUserType());
         UserEntity userEntity = factory.createUser(request, encryptedPassword);
-        UserEntity savedUserEntity = userRepository.save(userEntity);
-        log.info("Usuario registrado exitosamente: {} (ID: {})",
-                savedUserEntity.getUsername(), savedUserEntity.getId());
-        return convertToDTO(savedUserEntity);
+        try {
+            UserEntity saved = userRepository.save(userEntity);
+            log.info("Usuario registrado exitosamente: {} (ID: {})", saved.getUsername(), saved.getId());
+            return convertToDTO(saved);
+        } catch (DataAccessException e) {
+            throw new InternalServerErrorException("Error al guardar el usuario en la base de datos", e);
+        } catch (Exception e) {
+            throw new InternalServerErrorException("Error inesperado al crear el usuario", e);
+        }
     }
 
     private void validateUniqueConstraints(CreateUserRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {
-            throw new IllegalArgumentException("Email already registered: " + request.getEmail());
+            throw new ConflictException("Email already registered: " + request.getEmail());
         }
         if (userRepository.existsByUsername(request.getUsername())) {
-            throw new IllegalArgumentException("Username already taken: " + request.getUsername());
+            throw new ConflictException("Username already taken: " + request.getUsername());
         }
-    }
-
-    public boolean authenticate(String email, String plainPassword) {
-        UserEntity userEntity = userRepository.findByEmail(email)
-                .orElseThrow(() -> new UserNotFoundException("UserEntity not found"));
-        boolean valid = passwordService.verifyPassword(plainPassword, userEntity.getPassword());
-        if (!valid) {
-            log.warn("Failed authentication attempt for: {}", email);
-        }
-
-        return valid;
     }
 
     @Transactional(readOnly = true)
     public List<UserDTO> getAllUsers() {
-        return userRepository.findAll().stream()
-                .map(this::convertToDTO)
-                .collect(Collectors.toList());
+        try {
+            return userRepository.findAll().stream()
+                    .map(this::convertToDTO)
+                    .collect(Collectors.toList());
+        } catch (DataAccessException e) {
+            throw new InternalServerErrorException("Error al consultar usuarios en la base de datos", e);
+        }
     }
 
     @Transactional(readOnly = true)
-    public UserDTO getUserById(UUID id) {
-        UserEntity userEntity = userRepository.findById(id)
-                .orElseThrow(() -> new UserNotFoundException("UserEntity not found with id: " + id));
-        return convertToDTO(userEntity);
+    public Optional<UserDTO> getUserById(UUID id) {
+        try {
+            return userRepository.findById(id).map(this::convertToDTO);
+        } catch (DataAccessException e) {
+            throw new InternalServerErrorException("Error al consultar el usuario en la base de datos", e);
+        }
     }
 
-    public UserDTO updateUser(UUID id, UpdateUserRequest request) {
-        UserEntity userEntity = userRepository.findById(id)
-                .orElseThrow(() -> new UserNotFoundException("UserEntity not found with id: " + id));
-
-        if (request.getUsername() != null) {
-            userEntity.setUsername(request.getUsername());
+    public Optional<UserDTO> updateUser(UUID id, UpdateUserRequest request) {
+        Optional<UserEntity> opt = userRepository.findById(id);
+        if (opt.isEmpty()) {
+            return Optional.empty();
         }
-        if (request.getEmail() != null) {
-            userEntity.setEmail(request.getEmail());
-        }
+        UserEntity userEntity = opt.get();
 
-        // Actualizar campos específicos según el tipo
+        if (request.getUsername() != null) userEntity.setUsername(request.getUsername());
+        if (request.getEmail() != null) userEntity.setEmail(request.getEmail());
+
         if (userEntity instanceof AdminUser admin && request.getAdminLevel() != null) {
             admin.setAdminLevel(request.getAdminLevel());
         }
@@ -102,20 +102,25 @@ public class UserServiceImpl implements IUserService {
             regular.setNewsletterSubscribed(request.getNewsletterSubscribed());
         }
 
-        UserEntity updatedUserEntity = userRepository.save(userEntity);
-        return convertToDTO(updatedUserEntity);
-    }
-
-    public void deleteUser(UUID id) {
-        if (!userRepository.existsById(id)) {
-            throw new UserNotFoundException("UserEntity not found with id: " + id);
+        try {
+            return Optional.of(convertToDTO(userRepository.save(userEntity)));
+        } catch (DataAccessException e) {
+            throw new InternalServerErrorException("Error al actualizar el usuario en la base de datos", e);
         }
-        userRepository.deleteById(id);
     }
 
-    /**
-     * Conversión a DTO con datos específicos según el tipo de usuario
-     */
+    public boolean deleteUser(UUID id) {
+        if (!userRepository.existsById(id)) {
+            return false;
+        }
+        try {
+            userRepository.deleteById(id);
+            return true;
+        } catch (DataAccessException e) {
+            throw new InternalServerErrorException("Error al eliminar el usuario en la base de datos", e);
+        }
+    }
+
     private UserDTO convertToDTO(UserEntity userEntity) {
         UserDTO.UserDTOBuilder builder = UserDTO.builder()
                 .id(userEntity.getId())

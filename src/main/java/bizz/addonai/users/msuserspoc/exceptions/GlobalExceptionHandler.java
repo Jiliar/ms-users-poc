@@ -17,16 +17,26 @@ public class GlobalExceptionHandler extends DataFetcherExceptionResolverAdapter 
     protected GraphQLError resolveToSingleError(Throwable ex, DataFetchingEnvironment env) {
         log.error("Exception occurred: {}", ex.getMessage(), ex);
 
-        if (ex instanceof UserNotFoundException) {
-            return this.buildError(ex.getMessage(), ErrorType.NOT_FOUND, env);
+        // Controller layer exceptions
+        if (ex instanceof NotFoundException) {
+            return buildError(ex.getMessage(), ErrorType.NOT_FOUND, env);
+        }
+        if (ex instanceof ConflictException) {
+            return buildError(ex.getMessage(), ErrorType.BAD_REQUEST, env);
+        }
+        if (ex instanceof BadRequestException) {
+            return buildError(ex.getMessage(), ErrorType.BAD_REQUEST, env);
+        }
+        if (ex instanceof BadGatewayException) {
+            return buildError("Error de comunicación con un servicio externo: " + ex.getMessage(), ErrorType.INTERNAL_ERROR, env);
         }
 
-        if (ex instanceof InvalidUserTypeException) {
-            return this.buildError(ex.getMessage(), ErrorType.BAD_REQUEST, env);
+        // Service layer exceptions
+        if (ex instanceof InternalServerErrorException) {
+            return buildError("Error interno del servidor: " + ex.getMessage(), ErrorType.INTERNAL_ERROR, env);
         }
 
-        return this.buildError("An unexpected error occurred: " + ex.getMessage(),
-                ErrorType.INTERNAL_ERROR, env);
+        return buildError("An unexpected error occurred: " + ex.getMessage(), ErrorType.INTERNAL_ERROR, env);
     }
 
     private GraphQLError buildError(String message, ErrorType errorType, DataFetchingEnvironment env) {

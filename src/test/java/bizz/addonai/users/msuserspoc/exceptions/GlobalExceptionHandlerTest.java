@@ -45,61 +45,77 @@ class GlobalExceptionHandlerTest {
 
     @Test
     void resolveToSingleError_userNotFound_returnsNOT_FOUND() {
-        UserNotFoundException ex = new UserNotFoundException("User not found");
+        GraphQLError error = handler.resolveToSingleError(new NotFoundException("User not found"), env);
 
-        GraphQLError error = handler.resolveToSingleError(ex, env);
-
-        assertThat(error).isNotNull();
         assertThat(error.getMessage()).isEqualTo("User not found");
         assertThat(error.getErrorType()).isEqualTo(ErrorType.NOT_FOUND);
     }
 
     @Test
+    void resolveToSingleError_notFoundBase_returnsNOT_FOUND() {
+        GraphQLError error = handler.resolveToSingleError(new NotFoundException("Resource not found"), env);
+
+        assertThat(error.getErrorType()).isEqualTo(ErrorType.NOT_FOUND);
+    }
+
+    @Test
+    void resolveToSingleError_conflictException_returnsBAD_REQUEST() {
+        GraphQLError error = handler.resolveToSingleError(new ConflictException("Email already registered"), env);
+
+        assertThat(error.getMessage()).isEqualTo("Email already registered");
+        assertThat(error.getErrorType()).isEqualTo(ErrorType.BAD_REQUEST);
+    }
+
+    @Test
     void resolveToSingleError_invalidUserType_returnsBAD_REQUEST() {
-        InvalidUserTypeException ex = new InvalidUserTypeException("Unknown user type: GUEST");
+        GraphQLError error = handler.resolveToSingleError(new InvalidUserTypeException("Unknown user type: GUEST"), env);
 
-        GraphQLError error = handler.resolveToSingleError(ex, env);
-
-        assertThat(error).isNotNull();
         assertThat(error.getMessage()).isEqualTo("Unknown user type: GUEST");
         assertThat(error.getErrorType()).isEqualTo(ErrorType.BAD_REQUEST);
     }
 
     @Test
-    void resolveToSingleError_unexpectedException_returnsINTERNAL_ERROR() {
-        RuntimeException ex = new RuntimeException("Something went wrong");
+    void resolveToSingleError_badRequestBase_returnsBAD_REQUEST() {
+        GraphQLError error = handler.resolveToSingleError(new BadRequestException("Invalid input"), env);
 
-        GraphQLError error = handler.resolveToSingleError(ex, env);
+        assertThat(error.getErrorType()).isEqualTo(ErrorType.BAD_REQUEST);
+    }
 
-        assertThat(error).isNotNull();
+    @Test
+    void resolveToSingleError_badGatewayException_returnsINTERNAL_ERROR() {
+        GraphQLError error = handler.resolveToSingleError(
+                new BadGatewayException("DB unreachable", new RuntimeException("timeout")), env);
+
+        assertThat(error.getMessage()).contains("Error de comunicación con un servicio externo");
+        assertThat(error.getErrorType()).isEqualTo(ErrorType.INTERNAL_ERROR);
+    }
+
+    @Test
+    void resolveToSingleError_internalServerError_returnsINTERNAL_ERROR() {
+        GraphQLError error = handler.resolveToSingleError(
+                new InternalServerErrorException("Unexpected failure", new RuntimeException("npe")), env);
+
+        assertThat(error.getMessage()).contains("Error interno del servidor");
+        assertThat(error.getErrorType()).isEqualTo(ErrorType.INTERNAL_ERROR);
+    }
+
+    @Test
+    void resolveToSingleError_unknownException_returnsINTERNAL_ERROR() {
+        GraphQLError error = handler.resolveToSingleError(new RuntimeException("Something went wrong"), env);
+
         assertThat(error.getMessage()).contains("An unexpected error occurred");
         assertThat(error.getErrorType()).isEqualTo(ErrorType.INTERNAL_ERROR);
     }
 
     @Test
-    void resolveToSingleError_illegalArgument_returnsINTERNAL_ERROR() {
-        IllegalArgumentException ex = new IllegalArgumentException("Bad input");
-
-        GraphQLError error = handler.resolveToSingleError(ex, env);
-
-        assertThat(error.getErrorType()).isEqualTo(ErrorType.INTERNAL_ERROR);
-    }
-
-    @Test
     void resolveToSingleError_errorContainsPath() {
-        UserNotFoundException ex = new UserNotFoundException("not found");
-
-        GraphQLError error = handler.resolveToSingleError(ex, env);
-
+        GraphQLError error = handler.resolveToSingleError(new NotFoundException("not found"), env);
         assertThat(error.getPath()).isNotNull();
     }
 
     @Test
     void resolveToSingleError_errorContainsLocations() {
-        UserNotFoundException ex = new UserNotFoundException("not found");
-
-        GraphQLError error = handler.resolveToSingleError(ex, env);
-
+        GraphQLError error = handler.resolveToSingleError(new NotFoundException("not found"), env);
         assertThat(error.getLocations()).isNotEmpty();
     }
 }

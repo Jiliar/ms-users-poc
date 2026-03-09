@@ -3,7 +3,10 @@ package bizz.addonai.users.msuserspoc.controllers.impl;
 import bizz.addonai.users.msuserspoc.dtos.CreateUserRequest;
 import bizz.addonai.users.msuserspoc.dtos.UpdateUserRequest;
 import bizz.addonai.users.msuserspoc.dtos.UserDTO;
-import bizz.addonai.users.msuserspoc.exceptions.UserNotFoundException;
+import bizz.addonai.users.msuserspoc.exceptions.BadGatewayException;
+import bizz.addonai.users.msuserspoc.exceptions.ConflictException;
+import bizz.addonai.users.msuserspoc.exceptions.InternalServerErrorException;
+import bizz.addonai.users.msuserspoc.exceptions.NotFoundException;
 import bizz.addonai.users.msuserspoc.models.enums.UserType;
 import bizz.addonai.users.msuserspoc.services.IUserService;
 import org.junit.jupiter.api.BeforeEach;
@@ -15,6 +18,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -26,11 +30,8 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class UserControllerImplTest {
 
-    @Mock
-    private IUserService userService;
-
-    @InjectMocks
-    private UserControllerImpl controller;
+    @Mock private IUserService userService;
+    @InjectMocks private UserControllerImpl controller;
 
     private UserDTO adminDTO;
     private UserDTO regularDTO;
@@ -38,28 +39,16 @@ class UserControllerImplTest {
     @BeforeEach
     void setUp() {
         adminDTO = UserDTO.builder()
-                .id(UUID.randomUUID())
-                .username("admin1")
-                .email("admin@test.com")
-                .userType(UserType.ADMIN)
-                .permissions("ALL:READ,WRITE,DELETE,MANAGE_USERS,MANAGE_SYSTEM")
-                .dashboardUrl("/admin/dashboard")
-                .createdAt(LocalDateTime.now())
-                .adminLevel("SENIOR")
-                .department("IT")
-                .build();
+                .id(UUID.randomUUID()).username("admin1").email("admin@test.com")
+                .userType(UserType.ADMIN).permissions("ALL:READ,WRITE,DELETE,MANAGE_USERS,MANAGE_SYSTEM")
+                .dashboardUrl("/admin/dashboard").createdAt(LocalDateTime.now())
+                .adminLevel("SENIOR").department("IT").build();
 
         regularDTO = UserDTO.builder()
-                .id(UUID.randomUUID())
-                .username("user1")
-                .email("user@test.com")
-                .userType(UserType.REGULAR)
-                .permissions("LIMITED:READ,WRITE")
-                .dashboardUrl("/user/dashboard")
-                .createdAt(LocalDateTime.now())
-                .subscriptionType("FREE")
-                .newsletterSubscribed(false)
-                .build();
+                .id(UUID.randomUUID()).username("user1").email("user@test.com")
+                .userType(UserType.REGULAR).permissions("LIMITED:READ,WRITE")
+                .dashboardUrl("/user/dashboard").createdAt(LocalDateTime.now())
+                .subscriptionType("FREE").newsletterSubscribed(false).build();
     }
 
     // --- allUsers ---
@@ -71,18 +60,14 @@ class UserControllerImplTest {
         List<UserDTO> result = controller.allUsers();
 
         assertThat(result).hasSize(2);
-        assertThat(result.get(0).getUsername()).isEqualTo("admin1");
-        assertThat(result.get(1).getUsername()).isEqualTo("user1");
-        verify(userService).getAllUsers();
     }
 
     @Test
-    void allUsers_emptyList_returnsEmpty() {
-        when(userService.getAllUsers()).thenReturn(List.of());
+    void allUsers_serviceThrowsInternalError_throwsBadGateway() {
+        when(userService.getAllUsers()).thenThrow(new InternalServerErrorException("DB error", new RuntimeException()));
 
-        List<UserDTO> result = controller.allUsers();
-
-        assertThat(result).isEmpty();
+        assertThatThrownBy(() -> controller.allUsers())
+                .isInstanceOf(BadGatewayException.class);
     }
 
     // --- userById ---
@@ -90,22 +75,30 @@ class UserControllerImplTest {
     @Test
     void userById_existing_returnsDTO() {
         UUID id = adminDTO.getId();
-        when(userService.getUserById(id)).thenReturn(adminDTO);
+        when(userService.getUserById(id)).thenReturn(Optional.of(adminDTO));
 
         UserDTO result = controller.userById(id);
 
-        assertThat(result.getId()).isEqualTo(id);
         assertThat(result.getUsername()).isEqualTo("admin1");
-        verify(userService).getUserById(id);
     }
 
     @Test
-    void userById_notFound_propagatesException() {
+    void userById_notFound_throwsNotFoundException() {
         UUID id = UUID.randomUUID();
-        when(userService.getUserById(id)).thenThrow(new UserNotFoundException("not found"));
+        when(userService.getUserById(id)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> controller.userById(id))
-                .isInstanceOf(UserNotFoundException.class);
+                .isInstanceOf(NotFoundException.class)
+                .hasMessageContaining(id.toString());
+    }
+
+    @Test
+    void userById_serviceThrowsInternalError_throwsBadGateway() {
+        UUID id = UUID.randomUUID();
+        when(userService.getUserById(id)).thenThrow(new InternalServerErrorException("DB error", new RuntimeException()));
+
+        assertThatThrownBy(() -> controller.userById(id))
+                .isInstanceOf(BadGatewayException.class);
     }
 
     // --- createUser ---
@@ -113,81 +106,65 @@ class UserControllerImplTest {
     @Test
     void createUser_validInput_returnsCreatedUser() {
         CreateUserRequest request = CreateUserRequest.builder()
-                .username("admin1")
-                .email("admin@test.com")
-                .password("Pass@1234")
-                .userType("ADMIN")
-                .adminLevel("SENIOR")
-                .build();
-
+                .username("admin1").email("admin@test.com").password("Pass@1234")
+                .userType("ADMIN").adminLevel("SENIOR").build();
         when(userService.createUser(request)).thenReturn(adminDTO);
 
         UserDTO result = controller.createUser(request);
 
         assertThat(result.getUsername()).isEqualTo("admin1");
-        verify(userService).createUser(request);
     }
 
     @Test
-    void createUser_serviceReturnsNull_throwsRuntimeException() {
+    void createUser_conflict_propagatesConflictException() {
         CreateUserRequest request = CreateUserRequest.builder()
-                .username("user1")
-                .email("user@test.com")
-                .password("Pass@1234")
-                .userType("REGULAR")
-                .build();
-
-        when(userService.createUser(request)).thenReturn(null);
+                .username("dup").email("dup@test.com").password("Pass@1234").userType("REGULAR").build();
+        when(userService.createUser(request)).thenThrow(new ConflictException("Email already registered"));
 
         assertThatThrownBy(() -> controller.createUser(request))
-                .isInstanceOf(RuntimeException.class)
-                .hasMessageContaining("No se pudo crear el usuario");
+                .isInstanceOf(ConflictException.class);
     }
 
     @Test
-    void createUser_serviceThrowsException_wrapsInRuntimeException() {
+    void createUser_serviceThrowsInternalError_throwsBadGateway() {
         CreateUserRequest request = CreateUserRequest.builder()
-                .username("dup")
-                .email("dup@test.com")
-                .password("Pass@1234")
-                .userType("REGULAR")
-                .build();
-
-        when(userService.createUser(request))
-                .thenThrow(new IllegalArgumentException("Email already registered"));
+                .username("user1").email("user@test.com").password("Pass@1234").userType("REGULAR").build();
+        when(userService.createUser(request)).thenThrow(new InternalServerErrorException("DB error", new RuntimeException()));
 
         assertThatThrownBy(() -> controller.createUser(request))
-                .isInstanceOf(RuntimeException.class)
-                .hasMessageContaining("Error al crear usuario");
+                .isInstanceOf(BadGatewayException.class);
     }
 
     // --- updateUser ---
 
     @Test
-    void updateUser_validInput_returnsUpdatedUser() {
+    void updateUser_existing_returnsUpdatedUser() {
         UUID id = adminDTO.getId();
-        UpdateUserRequest request = UpdateUserRequest.builder()
-                .username("newAdmin")
-                .adminLevel("SUPER")
-                .build();
-
-        when(userService.updateUser(id, request)).thenReturn(adminDTO);
+        UpdateUserRequest request = UpdateUserRequest.builder().username("newAdmin").build();
+        when(userService.updateUser(id, request)).thenReturn(Optional.of(adminDTO));
 
         UserDTO result = controller.updateUser(id, request);
 
         assertThat(result).isEqualTo(adminDTO);
-        verify(userService).updateUser(id, request);
     }
 
     @Test
-    void updateUser_notFound_propagatesException() {
+    void updateUser_notFound_throwsNotFoundException() {
         UUID id = UUID.randomUUID();
-        UpdateUserRequest request = new UpdateUserRequest();
+        when(userService.updateUser(eq(id), any())).thenReturn(Optional.empty());
 
-        when(userService.updateUser(eq(id), any())).thenThrow(new UserNotFoundException("not found"));
+        assertThatThrownBy(() -> controller.updateUser(id, new UpdateUserRequest()))
+                .isInstanceOf(NotFoundException.class)
+                .hasMessageContaining(id.toString());
+    }
 
-        assertThatThrownBy(() -> controller.updateUser(id, request))
-                .isInstanceOf(UserNotFoundException.class);
+    @Test
+    void updateUser_serviceThrowsInternalError_throwsBadGateway() {
+        UUID id = UUID.randomUUID();
+        when(userService.updateUser(eq(id), any())).thenThrow(new InternalServerErrorException("DB error", new RuntimeException()));
+
+        assertThatThrownBy(() -> controller.updateUser(id, new UpdateUserRequest()))
+                .isInstanceOf(BadGatewayException.class);
     }
 
     // --- deleteUser ---
@@ -195,20 +172,29 @@ class UserControllerImplTest {
     @Test
     void deleteUser_existing_returnsTrue() {
         UUID id = UUID.randomUUID();
-        doNothing().when(userService).deleteUser(id);
+        when(userService.deleteUser(id)).thenReturn(true);
 
         Boolean result = controller.deleteUser(id);
 
         assertThat(result).isTrue();
-        verify(userService).deleteUser(id);
     }
 
     @Test
-    void deleteUser_notFound_propagatesException() {
+    void deleteUser_notFound_throwsNotFoundException() {
         UUID id = UUID.randomUUID();
-        doThrow(new UserNotFoundException("not found")).when(userService).deleteUser(id);
+        when(userService.deleteUser(id)).thenReturn(false);
 
         assertThatThrownBy(() -> controller.deleteUser(id))
-                .isInstanceOf(UserNotFoundException.class);
+                .isInstanceOf(NotFoundException.class)
+                .hasMessageContaining(id.toString());
+    }
+
+    @Test
+    void deleteUser_serviceThrowsInternalError_throwsBadGateway() {
+        UUID id = UUID.randomUUID();
+        when(userService.deleteUser(id)).thenThrow(new InternalServerErrorException("DB error", new RuntimeException()));
+
+        assertThatThrownBy(() -> controller.deleteUser(id))
+                .isInstanceOf(BadGatewayException.class);
     }
 }

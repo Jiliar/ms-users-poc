@@ -3,6 +3,7 @@ package bizz.addonai.users.msuserspoc.services.factories.impl;
 import bizz.addonai.users.msuserspoc.dtos.CreateUserRequest;
 import bizz.addonai.users.msuserspoc.models.RegularUser;
 import bizz.addonai.users.msuserspoc.models.UserEntity;
+import bizz.addonai.users.msuserspoc.models.enums.SubscriptionType;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -16,7 +17,7 @@ public class RegularUserFactory implements UserFactory {
                 .username(request.getUsername())
                 .email(request.getEmail())
                 .password(encryptedPassword)
-                .subscriptionType(request.getSubscriptionType() != null ? request.getSubscriptionType() : "FREE")
+                .subscriptionType(request.getSubscriptionType() != null ? request.getSubscriptionType() : SubscriptionType.FREE)
                 .newsletterSubscribed(request.getNewsletterSubscribed() != null ? request.getNewsletterSubscribed() : false)
                 .build();
     }
@@ -28,11 +29,6 @@ public class RegularUserFactory implements UserFactory {
 
     @Override
     public void validateUserData(CreateUserRequest request) {
-        if (request.getSubscriptionType() != null) {
-            String type = request.getSubscriptionType().toUpperCase();
-            if (!type.matches("FREE|BASIC|PREMIUM|ENTERPRISE")) {
-                throw new IllegalArgumentException("Invalid subscription type: " + type);
-            }
-        }
+        // subscriptionType is already type-safe via SubscriptionType enum
     }
 }

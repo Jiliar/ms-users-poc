@@ -7,6 +7,7 @@ import bizz.addonai.users.msuserspoc.exceptions.BadGatewayException;
 import bizz.addonai.users.msuserspoc.exceptions.ConflictException;
 import bizz.addonai.users.msuserspoc.exceptions.InternalServerErrorException;
 import bizz.addonai.users.msuserspoc.exceptions.NotFoundException;
+import bizz.addonai.users.msuserspoc.models.enums.SubscriptionType;
 import bizz.addonai.users.msuserspoc.models.enums.UserType;
 import bizz.addonai.users.msuserspoc.services.IUserService;
 import org.junit.jupiter.api.BeforeEach;
@@ -48,7 +49,7 @@ class UserControllerImplTest {
                 .id(UUID.randomUUID()).username("user1").email("user@test.com")
                 .userType(UserType.REGULAR).permissions("LIMITED:READ,WRITE")
                 .dashboardUrl("/user/dashboard").createdAt(LocalDateTime.now())
-                .subscriptionType("FREE").newsletterSubscribed(false).build();
+                .subscriptionType(SubscriptionType.FREE).newsletterSubscribed(false).build();
     }
 
     // --- allUsers ---
@@ -107,7 +108,7 @@ class UserControllerImplTest {
     void createUser_validInput_returnsCreatedUser() {
         CreateUserRequest request = CreateUserRequest.builder()
                 .username("admin1").email("admin@test.com").password("Pass@1234")
-                .userType("ADMIN").adminLevel("SENIOR").build();
+                .userType(UserType.ADMIN).adminLevel("SENIOR").build();
         when(userService.createUser(request)).thenReturn(adminDTO);
 
         UserDTO result = controller.createUser(request);
@@ -118,7 +119,7 @@ class UserControllerImplTest {
     @Test
     void createUser_conflict_propagatesConflictException() {
         CreateUserRequest request = CreateUserRequest.builder()
-                .username("dup").email("dup@test.com").password("Pass@1234").userType("REGULAR").build();
+                .username("dup").email("dup@test.com").password("Pass@1234").userType(UserType.REGULAR).build();
         when(userService.createUser(request)).thenThrow(new ConflictException("Email already registered"));
 
         assertThatThrownBy(() -> controller.createUser(request))
@@ -128,7 +129,7 @@ class UserControllerImplTest {
     @Test
     void createUser_serviceThrowsInternalError_throwsBadGateway() {
         CreateUserRequest request = CreateUserRequest.builder()
-                .username("user1").email("user@test.com").password("Pass@1234").userType("REGULAR").build();
+                .username("user1").email("user@test.com").password("Pass@1234").userType(UserType.REGULAR).build();
         when(userService.createUser(request)).thenThrow(new InternalServerErrorException("DB error", new RuntimeException()));
 
         assertThatThrownBy(() -> controller.createUser(request))

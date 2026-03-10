@@ -1,7 +1,10 @@
 package bizz.addonai.users.msuserspoc.models;
 
+import bizz.addonai.users.msuserspoc.models.enums.SubscriptionType;
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
@@ -17,7 +20,8 @@ import lombok.experimental.SuperBuilder;
 @AllArgsConstructor
 public class RegularUser extends UserEntity {
 
-    private String subscriptionType;
+    @Enumerated(EnumType.STRING)
+    private SubscriptionType subscriptionType;
     private boolean newsletterSubscribed;
 
     @Override
@@ -30,7 +34,7 @@ public class RegularUser extends UserEntity {
         return "/user/dashboard";
     }
 
-    public String getSubscriptionType() {
+    public SubscriptionType getSubscriptionType() {
         return subscriptionType;
     }
 

@@ -12,6 +12,13 @@ enum UserType {
     REGULAR
 }
 
+enum SubscriptionType {
+    FREE
+    BASIC
+    PREMIUM
+    ENTERPRISE
+}
+
 # ==========================================
 # TYPE PRINCIPAL
 # ==========================================
@@ -26,7 +33,7 @@ type UserDTO {
     createdAt: String!
     adminLevel: String
     department: String
-    subscriptionType: String
+    subscriptionType: SubscriptionType
     newsletterSubscribed: Boolean
 }
 
@@ -38,10 +45,10 @@ input CreateUserInput {
     username: String!
     email: String!
     password: String!
-    userType: String!
+    userType: UserType!
     adminLevel: String
     department: String
-    subscriptionType: String
+    subscriptionType: SubscriptionType
     newsletterSubscribed: Boolean
 }
 
@@ -50,7 +57,7 @@ input UpdateUserInput {
     email: String
     adminLevel: String
     department: String
-    subscriptionType: String
+    subscriptionType: SubscriptionType
     newsletterSubscribed: Boolean
 }
 

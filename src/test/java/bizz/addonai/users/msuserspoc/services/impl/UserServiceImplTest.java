@@ -7,6 +7,7 @@ import bizz.addonai.users.msuserspoc.exceptions.ConflictException;
 import bizz.addonai.users.msuserspoc.exceptions.InternalServerErrorException;
 import bizz.addonai.users.msuserspoc.models.AdminUser;
 import bizz.addonai.users.msuserspoc.models.RegularUser;
+import bizz.addonai.users.msuserspoc.models.enums.SubscriptionType;
 import bizz.addonai.users.msuserspoc.models.enums.UserType;
 import bizz.addonai.users.msuserspoc.repositories.IUserRepository;
 import bizz.addonai.users.msuserspoc.services.factories.IUserFactoryProvider;
@@ -55,7 +56,7 @@ class UserServiceImplTest {
     private RegularUser regularUserWith(UUID id, String username, String email) {
         RegularUser user = RegularUser.builder()
                 .username(username).email(email).password("hash")
-                .subscriptionType("FREE").newsletterSubscribed(false).build();
+                .subscriptionType(SubscriptionType.FREE).newsletterSubscribed(false).build();
         user.setId(id);
         user.setCreatedAt(LocalDateTime.now());
         user.setUserType(UserType.REGULAR);
@@ -69,7 +70,7 @@ class UserServiceImplTest {
         UUID id = UUID.randomUUID();
         CreateUserRequest request = CreateUserRequest.builder()
                 .username("admin1").email("admin@test.com").password("Pass@1234")
-                .userType("ADMIN").adminLevel("SENIOR").department("IT").build();
+                .userType(UserType.ADMIN).adminLevel("SENIOR").department("IT").build();
         AdminUser entity = adminUserWith(id, "admin1", "admin@test.com");
 
         when(userRepository.existsByEmail("admin@test.com")).thenReturn(false);
@@ -91,9 +92,9 @@ class UserServiceImplTest {
         UUID id = UUID.randomUUID();
         CreateUserRequest request = CreateUserRequest.builder()
                 .username("user1").email("user@test.com").password("Pass@1234")
-                .userType("REGULAR").subscriptionType("BASIC").newsletterSubscribed(true).build();
+                .userType(UserType.REGULAR).subscriptionType(SubscriptionType.BASIC).newsletterSubscribed(true).build();
         RegularUser entity = regularUserWith(id, "user1", "user@test.com");
-        entity.setSubscriptionType("BASIC");
+        entity.setSubscriptionType(SubscriptionType.BASIC);
         entity.setNewsletterSubscribed(true);
 
         when(userRepository.existsByEmail("user@test.com")).thenReturn(false);
@@ -105,14 +106,14 @@ class UserServiceImplTest {
 
         UserDTO result = userService.createUser(request);
 
-        assertThat(result.getSubscriptionType()).isEqualTo("BASIC");
+        assertThat(result.getSubscriptionType()).isEqualTo(SubscriptionType.BASIC);
         assertThat(result.getNewsletterSubscribed()).isTrue();
     }
 
     @Test
     void createUser_duplicateEmail_throwsConflictException() {
         CreateUserRequest request = CreateUserRequest.builder()
-                .username("user1").email("dup@test.com").password("Pass@1234").userType("REGULAR").build();
+                .username("user1").email("dup@test.com").password("Pass@1234").userType(UserType.REGULAR).build();
         when(userRepository.existsByEmail("dup@test.com")).thenReturn(true);
 
         assertThatThrownBy(() -> userService.createUser(request))
@@ -123,7 +124,7 @@ class UserServiceImplTest {
     @Test
     void createUser_duplicateUsername_throwsConflictException() {
         CreateUserRequest request = CreateUserRequest.builder()
-                .username("taken").email("new@test.com").password("Pass@1234").userType("REGULAR").build();
+                .username("taken").email("new@test.com").password("Pass@1234").userType(UserType.REGULAR).build();
         when(userRepository.existsByEmail("new@test.com")).thenReturn(false);
         when(userRepository.existsByUsername("taken")).thenReturn(true);
 
@@ -135,7 +136,7 @@ class UserServiceImplTest {
     @Test
     void createUser_dbFailure_throwsInternalServerError() {
         CreateUserRequest request = CreateUserRequest.builder()
-                .username("user1").email("user@test.com").password("Pass@1234").userType("REGULAR").build();
+                .username("user1").email("user@test.com").password("Pass@1234").userType(UserType.REGULAR).build();
         AdminUser entity = adminUserWith(UUID.randomUUID(), "user1", "user@test.com");
 
         when(userRepository.existsByEmail(any())).thenReturn(false);
@@ -237,7 +238,7 @@ class UserServiceImplTest {
         UUID id = UUID.randomUUID();
         RegularUser entity = regularUserWith(id, "user", "user@test.com");
         UpdateUserRequest request = UpdateUserRequest.builder()
-                .subscriptionType("PREMIUM").newsletterSubscribed(true).build();
+                .subscriptionType(SubscriptionType.PREMIUM).newsletterSubscribed(true).build();
 
         when(userRepository.findById(id)).thenReturn(Optional.of(entity));
         when(userRepository.save(entity)).thenReturn(entity);
@@ -245,7 +246,7 @@ class UserServiceImplTest {
         Optional<UserDTO> result = userService.updateUser(id, request);
 
         assertThat(result).isPresent();
-        assertThat(result.get().getSubscriptionType()).isEqualTo("PREMIUM");
+        assertThat(result.get().getSubscriptionType()).isEqualTo(SubscriptionType.PREMIUM);
     }
 
     // --- deleteUser ---

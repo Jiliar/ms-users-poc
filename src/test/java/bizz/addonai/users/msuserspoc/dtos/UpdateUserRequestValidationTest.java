@@ -1,10 +1,13 @@
 package bizz.addonai.users.msuserspoc.dtos;
 
+import bizz.addonai.users.msuserspoc.models.enums.SubscriptionType;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validation;
 import jakarta.validation.Validator;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 
 import java.util.Set;
 
@@ -58,15 +61,16 @@ class UpdateUserRequestValidationTest {
         assertThat(validate(req)).noneMatch(v -> v.getPropertyPath().toString().equals("email"));
     }
 
-    @Test
-    void subscriptionType_invalidValue_failsValidation() {
-        UpdateUserRequest req = UpdateUserRequest.builder().subscriptionType("PLATINUM").build();
-        assertThat(validate(req)).anyMatch(v -> v.getPropertyPath().toString().equals("subscriptionType"));
+    @ParameterizedTest
+    @EnumSource(SubscriptionType.class)
+    void subscriptionType_allEnumValues_passesValidation(SubscriptionType type) {
+        UpdateUserRequest req = UpdateUserRequest.builder().subscriptionType(type).build();
+        assertThat(validate(req)).noneMatch(v -> v.getPropertyPath().toString().equals("subscriptionType"));
     }
 
     @Test
-    void subscriptionType_valid_passesValidation() {
-        UpdateUserRequest req = UpdateUserRequest.builder().subscriptionType("PREMIUM").build();
+    void subscriptionType_null_passesValidation() {
+        UpdateUserRequest req = UpdateUserRequest.builder().subscriptionType(null).build();
         assertThat(validate(req)).noneMatch(v -> v.getPropertyPath().toString().equals("subscriptionType"));
     }
 

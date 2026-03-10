@@ -37,7 +37,7 @@ public class UserServiceImpl implements IUserService {
         log.info("Iniciando registro de usuario: {}", request.getUsername());
         validateUniqueConstraints(request);
         String encryptedPassword = passwordService.encryptPassword(request.getPassword());
-        UserFactory factory = factoryProvider.getFactory(request.getUserType());
+        UserFactory factory = factoryProvider.getFactory(request.getUserType().name());
         UserEntity userEntity = factory.createUser(request, encryptedPassword);
         try {
             UserEntity saved = userRepository.save(userEntity);

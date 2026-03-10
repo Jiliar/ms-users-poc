@@ -1,7 +1,10 @@
 package bizz.addonai.users.msuserspoc.dtos;
 
+import bizz.addonai.users.msuserspoc.models.enums.SubscriptionType;
+import bizz.addonai.users.msuserspoc.models.enums.UserType;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
@@ -32,9 +35,8 @@ public class CreateUserRequest {
     )
     private String password;
 
-    @NotBlank(message = "User type is required")
-    @Pattern(regexp = "^(ADMIN|REGULAR)$", message = "User type must be ADMIN or REGULAR")
-    private String userType;
+    @NotNull(message = "User type is required")
+    private UserType userType;
 
     @Size(max = 50, message = "Admin level must not exceed 50 characters")
     private String adminLevel;
@@ -42,11 +44,7 @@ public class CreateUserRequest {
     @Size(max = 100, message = "Department must not exceed 100 characters")
     private String department;
 
-    @Pattern(
-            regexp = "^(FREE|BASIC|PREMIUM|ENTERPRISE)$",
-            message = "Subscription type must be FREE, BASIC, PREMIUM or ENTERPRISE"
-    )
-    private String subscriptionType;
+    private SubscriptionType subscriptionType;
 
     private Boolean newsletterSubscribed;
 }

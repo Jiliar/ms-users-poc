@@ -4,6 +4,7 @@ import bizz.addonai.users.msuserspoc.dtos.CreateUserRequest;
 import bizz.addonai.users.msuserspoc.exceptions.InvalidUserTypeException;
 import bizz.addonai.users.msuserspoc.models.AdminUser;
 import bizz.addonai.users.msuserspoc.models.UserEntity;
+import bizz.addonai.users.msuserspoc.models.enums.UserType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -29,7 +30,7 @@ class AdminUserFactoryTest {
         CreateUserRequest request = CreateUserRequest.builder()
                 .username("admin1")
                 .email("admin@test.com")
-                .userType("ADMIN")
+                .userType(UserType.ADMIN)
                 .adminLevel("SENIOR")
                 .department("IT")
                 .build();

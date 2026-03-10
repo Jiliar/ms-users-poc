@@ -1,12 +1,14 @@
 package bizz.addonai.users.msuserspoc.dtos;
 
+import bizz.addonai.users.msuserspoc.models.enums.SubscriptionType;
+import bizz.addonai.users.msuserspoc.models.enums.UserType;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validation;
 import jakarta.validation.Validator;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
+import org.junit.jupiter.params.provider.EnumSource;
 
 import java.util.Set;
 
@@ -26,7 +28,7 @@ class CreateUserRequestValidationTest {
                 .username("john_doe")
                 .email("john@example.com")
                 .password("Secret@123")
-                .userType("ADMIN")
+                .userType(UserType.ADMIN)
                 .adminLevel("SENIOR")
                 .build();
     }
@@ -114,23 +116,15 @@ class CreateUserRequestValidationTest {
     // --- userType ---
 
     @Test
-    void userType_blank_failsValidation() {
+    void userType_null_failsValidation() {
         CreateUserRequest req = validRequest();
-        req.setUserType("");
+        req.setUserType(null);
         assertThat(validate(req)).anyMatch(v -> v.getPropertyPath().toString().equals("userType"));
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"SUPERADMIN", "admin", "regular", "GUEST"})
-    void userType_invalidValue_failsValidation(String type) {
-        CreateUserRequest req = validRequest();
-        req.setUserType(type);
-        assertThat(validate(req)).anyMatch(v -> v.getPropertyPath().toString().equals("userType"));
-    }
-
-    @ParameterizedTest
-    @ValueSource(strings = {"ADMIN", "REGULAR"})
-    void userType_validValues_passesValidation(String type) {
+    @EnumSource(UserType.class)
+    void userType_allEnumValues_passesValidation(UserType type) {
         CreateUserRequest req = validRequest();
         req.setUserType(type);
         assertThat(validate(req)).noneMatch(v -> v.getPropertyPath().toString().equals("userType"));
@@ -139,18 +133,11 @@ class CreateUserRequestValidationTest {
     // --- subscriptionType ---
 
     @ParameterizedTest
-    @ValueSource(strings = {"FREE", "BASIC", "PREMIUM", "ENTERPRISE"})
-    void subscriptionType_validValues_passesValidation(String type) {
+    @EnumSource(SubscriptionType.class)
+    void subscriptionType_allEnumValues_passesValidation(SubscriptionType type) {
         CreateUserRequest req = validRequest();
         req.setSubscriptionType(type);
         assertThat(validate(req)).noneMatch(v -> v.getPropertyPath().toString().equals("subscriptionType"));
-    }
-
-    @Test
-    void subscriptionType_invalidValue_failsValidation() {
-        CreateUserRequest req = validRequest();
-        req.setSubscriptionType("GOLD");
-        assertThat(validate(req)).anyMatch(v -> v.getPropertyPath().toString().equals("subscriptionType"));
     }
 
     @Test

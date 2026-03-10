@@ -1,5 +1,6 @@
 package bizz.addonai.users.msuserspoc.dtos;
 
+import bizz.addonai.users.msuserspoc.models.enums.SubscriptionType;
 import bizz.addonai.users.msuserspoc.models.enums.UserType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -23,6 +24,6 @@ public class UserDTO implements UserResult{
     private LocalDateTime createdAt;
     private String adminLevel;
     private String department;
-    private String subscriptionType;
+    private SubscriptionType subscriptionType;
     private Boolean newsletterSubscribed;
 }

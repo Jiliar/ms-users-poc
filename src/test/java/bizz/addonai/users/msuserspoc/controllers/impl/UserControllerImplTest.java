@@ -1,9 +1,14 @@
 package bizz.addonai.users.msuserspoc.controllers.impl;
 
 import bizz.addonai.users.msuserspoc.dtos.CreateUserRequest;
+import bizz.addonai.users.msuserspoc.dtos.PageInput;
+import bizz.addonai.users.msuserspoc.dtos.PageMetadata;
 import bizz.addonai.users.msuserspoc.dtos.UpdateUserRequest;
 import bizz.addonai.users.msuserspoc.dtos.UserDTO;
+import bizz.addonai.users.msuserspoc.dtos.UserFilterInput;
+import bizz.addonai.users.msuserspoc.dtos.UserPageResponse;
 import bizz.addonai.users.msuserspoc.exceptions.BadGatewayException;
+import bizz.addonai.users.msuserspoc.exceptions.BadRequestException;
 import bizz.addonai.users.msuserspoc.exceptions.ConflictException;
 import bizz.addonai.users.msuserspoc.exceptions.InternalServerErrorException;
 import bizz.addonai.users.msuserspoc.exceptions.NotFoundException;
@@ -36,6 +41,7 @@ class UserControllerImplTest {
 
     private UserDTO adminDTO;
     private UserDTO regularDTO;
+    private UserPageResponse pagedResponse;
 
     @BeforeEach
     void setUp() {
@@ -50,24 +56,55 @@ class UserControllerImplTest {
                 .userType(UserType.REGULAR).permissions("LIMITED:READ,WRITE")
                 .dashboardUrl("/user/dashboard").createdAt(LocalDateTime.now())
                 .subscriptionType(SubscriptionType.FREE).newsletterSubscribed(false).build();
+
+        pagedResponse = UserPageResponse.builder()
+                .content(List.of(adminDTO, regularDTO))
+                .pageInfo(PageMetadata.builder()
+                        .page(0).size(10).totalElements(2).totalPages(1)
+                        .hasNext(false).hasPrevious(false).build())
+                .build();
     }
 
     // --- allUsers ---
 
     @Test
-    void allUsers_returnsListFromService() {
-        when(userService.getAllUsers()).thenReturn(List.of(adminDTO, regularDTO));
+    void allUsers_noFilters_returnsPagedResponse() {
+        when(userService.getAllUsers(null, null)).thenReturn(pagedResponse);
 
-        List<UserDTO> result = controller.allUsers();
+        UserPageResponse result = controller.allUsers(null, null);
 
-        assertThat(result).hasSize(2);
+        assertThat(result.getContent()).hasSize(2);
+        assertThat(result.getPageInfo().getTotalElements()).isEqualTo(2);
+    }
+
+    @Test
+    void allUsers_withFilters_passesThemToService() {
+        UserFilterInput filter = UserFilterInput.builder().startDate("2025-01-01").build();
+        PageInput page = PageInput.builder().page(0).size(5).build();
+        when(userService.getAllUsers(filter, page)).thenReturn(pagedResponse);
+
+        UserPageResponse result = controller.allUsers(filter, page);
+
+        assertThat(result).isEqualTo(pagedResponse);
+        verify(userService).getAllUsers(filter, page);
+    }
+
+    @Test
+    void allUsers_invalidSortBy_propagatesBadRequest() {
+        PageInput page = PageInput.builder().sortBy("password").build();
+        when(userService.getAllUsers(null, page)).thenThrow(new BadRequestException("Invalid sortBy field: 'password'"));
+
+        assertThatThrownBy(() -> controller.allUsers(null, page))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("Invalid sortBy field");
     }
 
     @Test
     void allUsers_serviceThrowsInternalError_throwsBadGateway() {
-        when(userService.getAllUsers()).thenThrow(new InternalServerErrorException("DB error", new RuntimeException()));
+        when(userService.getAllUsers(any(), any()))
+                .thenThrow(new InternalServerErrorException("DB error", new RuntimeException()));
 
-        assertThatThrownBy(() -> controller.allUsers())
+        assertThatThrownBy(() -> controller.allUsers(null, null))
                 .isInstanceOf(BadGatewayException.class);
     }
 

@@ -1,25 +1,36 @@
 package bizz.addonai.users.msuserspoc.services.impl;
 
 import bizz.addonai.users.msuserspoc.dtos.CreateUserRequest;
+import bizz.addonai.users.msuserspoc.dtos.PageInput;
+import bizz.addonai.users.msuserspoc.dtos.PageMetadata;
 import bizz.addonai.users.msuserspoc.dtos.UpdateUserRequest;
 import bizz.addonai.users.msuserspoc.dtos.UserDTO;
+import bizz.addonai.users.msuserspoc.dtos.UserFilterInput;
+import bizz.addonai.users.msuserspoc.dtos.UserPageResponse;
+import bizz.addonai.users.msuserspoc.exceptions.BadRequestException;
 import bizz.addonai.users.msuserspoc.exceptions.ConflictException;
 import bizz.addonai.users.msuserspoc.exceptions.InternalServerErrorException;
 import bizz.addonai.users.msuserspoc.models.AdminUser;
 import bizz.addonai.users.msuserspoc.models.RegularUser;
 import bizz.addonai.users.msuserspoc.models.UserEntity;
 import bizz.addonai.users.msuserspoc.repositories.IUserRepository;
+import bizz.addonai.users.msuserspoc.repositories.specifications.UserSpecification;
 import bizz.addonai.users.msuserspoc.services.IUserService;
 import bizz.addonai.users.msuserspoc.services.factories.IUserFactoryProvider;
 import bizz.addonai.users.msuserspoc.services.factories.impl.UserFactory;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataAccessException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -28,6 +39,12 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Transactional
 public class UserServiceImpl implements IUserService {
+
+    private static final int DEFAULT_PAGE      = 0;
+    private static final int DEFAULT_SIZE      = 10;
+    private static final int MAX_SIZE          = 100;
+    private static final String DEFAULT_SORT   = "createdAt";
+    private static final Set<String> SORTABLE_FIELDS = Set.of("createdAt", "updatedAt", "username", "email");
 
     private final IUserRepository userRepository;
     private final IUserFactoryProvider factoryProvider;
@@ -50,21 +67,26 @@ public class UserServiceImpl implements IUserService {
         }
     }
 
-    private void validateUniqueConstraints(CreateUserRequest request) {
-        if (userRepository.existsByEmail(request.getEmail())) {
-            throw new ConflictException("Email already registered: " + request.getEmail());
-        }
-        if (userRepository.existsByUsername(request.getUsername())) {
-            throw new ConflictException("Username already taken: " + request.getUsername());
-        }
-    }
-
     @Transactional(readOnly = true)
-    public List<UserDTO> getAllUsers() {
+    public UserPageResponse getAllUsers(UserFilterInput filter, PageInput pageInput) {
+        PageRequest pageRequest = buildPageRequest(pageInput);
+        Specification<UserEntity> spec = buildSpecification(filter);
         try {
-            return userRepository.findAll().stream()
+            Page<UserEntity> page = userRepository.findAll(spec, pageRequest);
+            List<UserDTO> content = page.getContent().stream()
                     .map(this::convertToDTO)
                     .collect(Collectors.toList());
+            return UserPageResponse.builder()
+                    .content(content)
+                    .pageInfo(PageMetadata.builder()
+                            .page(page.getNumber())
+                            .size(page.getSize())
+                            .totalElements(page.getTotalElements())
+                            .totalPages(page.getTotalPages())
+                            .hasNext(page.hasNext())
+                            .hasPrevious(page.hasPrevious())
+                            .build())
+                    .build();
         } catch (DataAccessException e) {
             throw new InternalServerErrorException("Error al consultar usuarios en la base de datos", e);
         }
@@ -118,6 +140,63 @@ public class UserServiceImpl implements IUserService {
             return true;
         } catch (DataAccessException e) {
             throw new InternalServerErrorException("Error al eliminar el usuario en la base de datos", e);
+        }
+    }
+
+    // ==========================================
+    // Private helpers
+    // ==========================================
+
+    private void validateUniqueConstraints(CreateUserRequest request) {
+        if (userRepository.existsByEmail(request.getEmail())) {
+            throw new ConflictException("Email already registered: " + request.getEmail());
+        }
+        if (userRepository.existsByUsername(request.getUsername())) {
+            throw new ConflictException("Username already taken: " + request.getUsername());
+        }
+    }
+
+    private PageRequest buildPageRequest(PageInput pageInput) {
+        int page = (pageInput != null && pageInput.getPage() != null)
+                ? Math.max(0, pageInput.getPage())
+                : DEFAULT_PAGE;
+
+        int size = (pageInput != null && pageInput.getSize() != null)
+                ? Math.min(MAX_SIZE, Math.max(1, pageInput.getSize()))
+                : DEFAULT_SIZE;
+
+        String sortBy = (pageInput != null && pageInput.getSortBy() != null)
+                ? pageInput.getSortBy()
+                : DEFAULT_SORT;
+
+        if (!SORTABLE_FIELDS.contains(sortBy)) {
+            throw new BadRequestException(
+                    "Invalid sortBy field: '" + sortBy + "'. Allowed values: " + SORTABLE_FIELDS);
+        }
+
+        Sort.Direction direction = Sort.Direction.DESC;
+        if (pageInput != null && "ASC".equalsIgnoreCase(pageInput.getSortDirection())) {
+            direction = Sort.Direction.ASC;
+        }
+
+        return PageRequest.of(page, size, Sort.by(direction, sortBy));
+    }
+
+    private Specification<UserEntity> buildSpecification(UserFilterInput filter) {
+        if (filter == null) return UserSpecification.withFilters(null);
+        // Eager date validation — the Specification lambda is lazy, so we validate before handing it to JPA
+        validateDateField(filter.getStartDate(), "startDate");
+        validateDateField(filter.getEndDate(), "endDate");
+        return UserSpecification.withFilters(filter);
+    }
+
+    private void validateDateField(String date, String fieldName) {
+        if (date == null) return;
+        try {
+            java.time.LocalDate.parse(date);
+        } catch (java.time.format.DateTimeParseException e) {
+            throw new BadRequestException(
+                    "Invalid date format for " + fieldName + ": '" + date + "'. Expected yyyy-MM-dd");
         }
     }
 

@@ -19,8 +19,13 @@ enum SubscriptionType {
     ENTERPRISE
 }
 
+enum SortDirection {
+    ASC
+    DESC
+}
+
 # ==========================================
-# TYPE PRINCIPAL
+# TYPES
 # ==========================================
 
 type UserDTO {
@@ -35,6 +40,20 @@ type UserDTO {
     department: String
     subscriptionType: SubscriptionType
     newsletterSubscribed: Boolean
+}
+
+type PageInfo {
+    page: Int!
+    size: Int!
+    totalElements: Int!
+    totalPages: Int!
+    hasNext: Boolean!
+    hasPrevious: Boolean!
+}
+
+type UsersPage {
+    content: [UserDTO!]!
+    pageInfo: PageInfo!
 }
 
 # ==========================================
@@ -61,12 +80,25 @@ input UpdateUserInput {
     newsletterSubscribed: Boolean
 }
 
+input UserFilterInput {
+    startDate: String
+    endDate: String
+    userType: UserType
+}
+
+input PageInput {
+    page: Int
+    size: Int
+    sortBy: String
+    sortDirection: SortDirection
+}
+
 # ==========================================
 # QUERIES
 # ==========================================
 
 type Query {
-    allUsers: [UserDTO!]!
+    allUsers(filter: UserFilterInput, page: PageInput): UsersPage!
     userById(id: UUID!): UserDTO
 }
 

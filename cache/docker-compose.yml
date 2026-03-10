@@ -1,0 +1,38 @@
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: um-redis
+    restart: unless-stopped
+    command: redis-server --requirepass ${REDIS_PASSWORD:-SecureR3dis!}
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-SecureR3dis!}", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - um-network
+
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: um-redis-commander
+    restart: unless-stopped
+    environment:
+      REDIS_HOSTS: local:redis:6379:0:${REDIS_PASSWORD:-SecureR3dis!}
+    ports:
+      - "8081:8081"
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - um-network
+
+volumes:
+  redis_data:
+
+networks:
+  um-network:
+    driver: bridge

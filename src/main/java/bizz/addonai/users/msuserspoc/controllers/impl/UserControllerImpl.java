@@ -2,8 +2,11 @@ package bizz.addonai.users.msuserspoc.controllers.impl;
 
 import bizz.addonai.users.msuserspoc.controllers.IUserController;
 import bizz.addonai.users.msuserspoc.dtos.CreateUserRequest;
+import bizz.addonai.users.msuserspoc.dtos.PageInput;
 import bizz.addonai.users.msuserspoc.dtos.UpdateUserRequest;
 import bizz.addonai.users.msuserspoc.dtos.UserDTO;
+import bizz.addonai.users.msuserspoc.dtos.UserFilterInput;
+import bizz.addonai.users.msuserspoc.dtos.UserPageResponse;
 import bizz.addonai.users.msuserspoc.exceptions.BadGatewayException;
 import bizz.addonai.users.msuserspoc.exceptions.InternalServerErrorException;
 import bizz.addonai.users.msuserspoc.exceptions.NotFoundException;
@@ -16,7 +19,6 @@ import org.springframework.graphql.data.method.annotation.QueryMapping;
 import org.springframework.stereotype.Controller;
 import org.springframework.validation.annotation.Validated;
 
-import java.util.List;
 import java.util.UUID;
 
 @Controller
@@ -27,12 +29,13 @@ public class UserControllerImpl implements IUserController {
     private final IUserService userService;
 
     @QueryMapping
-    public List<UserDTO> allUsers() {
+    public UserPageResponse allUsers(@Argument UserFilterInput filter, @Argument PageInput page) {
         try {
-            return userService.getAllUsers();
+            return userService.getAllUsers(filter, page);
         } catch (InternalServerErrorException e) {
             throw new BadGatewayException(e.getMessage(), e);
         }
+        // BadRequestException (invalid sortBy / date format) propagates as-is to GlobalExceptionHandler
     }
 
     @QueryMapping

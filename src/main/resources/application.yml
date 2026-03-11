@@ -34,6 +34,7 @@ logging:
   level:
     bizz.addonai.users.msuserspoc.services: DEBUG
     org.springframework.transaction: DEBUG
+    org.springframework.web: TRACE
 
 
 

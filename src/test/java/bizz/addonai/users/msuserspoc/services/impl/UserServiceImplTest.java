@@ -16,9 +16,9 @@ import bizz.addonai.users.msuserspoc.models.enums.SubscriptionType;
 import bizz.addonai.users.msuserspoc.models.enums.UserType;
 import bizz.addonai.users.msuserspoc.repositories.jpa.IUserRepository;
 import bizz.addonai.users.msuserspoc.repositories.security.impl.PasswordRepositoryImpl;
-import bizz.addonai.users.msuserspoc.services.jpa.factories.IUserFactoryProvider;
-import bizz.addonai.users.msuserspoc.services.jpa.factories.impl.UserFactory;
-import bizz.addonai.users.msuserspoc.services.jpa.impl.UserJpaServiceImpl;
+import bizz.addonai.users.msuserspoc.services.factories.IUserFactoryProvider;
+import bizz.addonai.users.msuserspoc.services.factories.users.IUserFactory;
+import bizz.addonai.users.msuserspoc.services.impl.UserServiceImpl;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

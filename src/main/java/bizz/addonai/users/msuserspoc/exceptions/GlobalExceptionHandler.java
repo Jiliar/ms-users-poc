@@ -45,7 +45,6 @@ public class GlobalExceptionHandler extends DataFetcherExceptionResolverAdapter 
             return buildError(ex.getMessage(), ErrorType.BAD_REQUEST, env);
         }
 
-        // Service layer exceptions
         if (ex instanceof InternalServerErrorException) {
             return buildError("Error interno del servidor: " + ex.getMessage(), ErrorType.INTERNAL_ERROR, env);
         }

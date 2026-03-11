@@ -3,10 +3,10 @@ package bizz.addonai.users.msuserspoc.services.factories.impl;
 import bizz.addonai.users.msuserspoc.exceptions.InvalidUserTypeException;
 import bizz.addonai.users.msuserspoc.models.enums.UserType;
 import bizz.addonai.users.msuserspoc.services.factories.users.IUserFactory;
-import bizz.addonai.users.msuserspoc.services.jpa.factories.impl.AdminUserFactory;
-import bizz.addonai.users.msuserspoc.services.jpa.factories.impl.RegularUserFactory;
-import bizz.addonai.users.msuserspoc.services.jpa.factories.impl.UserFactory;
-import bizz.addonai.users.msuserspoc.services.jpa.factories.impl.UserFactoryProviderImpl;
+import bizz.addonai.users.msuserspoc.services.factories.users.impl.AdminUserFactory;
+import bizz.addonai.users.msuserspoc.services.factories.users.impl.RegularUserFactory;
+import bizz.addonai.users.msuserspoc.services.factories.users.IUserFactory;
+import bizz.addonai.users.msuserspoc.services.factories.impl.UserFactoryProviderImpl;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

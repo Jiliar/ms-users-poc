@@ -48,13 +48,13 @@ class UserControllerImplTest {
         adminDTO = UserDTO.builder()
                 .id(UUID.randomUUID()).username("admin1").email("admin@test.com")
                 .userType(UserType.ADMIN).permissions("ALL:READ,WRITE,DELETE,MANAGE_USERS,MANAGE_SYSTEM")
-                .dashboardUrl("/admin/dashboard").createdAt(LocalDateTime.now())
+                .dashboardUrl("/admin/dashboard").createdAt(LocalDateTime.now().toString())
                 .adminLevel("SENIOR").department("IT").build();
 
         regularDTO = UserDTO.builder()
                 .id(UUID.randomUUID()).username("user1").email("user@test.com")
                 .userType(UserType.REGULAR).permissions("LIMITED:READ,WRITE")
-                .dashboardUrl("/user/dashboard").createdAt(LocalDateTime.now())
+                .dashboardUrl("/user/dashboard").createdAt(LocalDateTime.now().toString())
                 .subscriptionType(SubscriptionType.FREE).newsletterSubscribed(false).build();
 
         pagedResponse = UserPageResponse.builder()

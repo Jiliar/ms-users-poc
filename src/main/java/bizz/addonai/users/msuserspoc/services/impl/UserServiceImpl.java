@@ -13,6 +13,7 @@ import bizz.addonai.users.msuserspoc.exceptions.InternalServerErrorException;
 import bizz.addonai.users.msuserspoc.models.AdminUser;
 import bizz.addonai.users.msuserspoc.models.RegularUser;
 import bizz.addonai.users.msuserspoc.models.UserEntity;
+import bizz.addonai.users.msuserspoc.models.enums.UserType;
 import bizz.addonai.users.msuserspoc.repositories.IUserRepository;
 import bizz.addonai.users.msuserspoc.repositories.specifications.UserSpecification;
 import bizz.addonai.users.msuserspoc.services.IUserService;
@@ -52,27 +53,38 @@ public class UserServiceImpl implements IUserService {
 
     public UserDTO createUser(CreateUserRequest request) {
         log.info("Iniciando registro de usuario: {}", request.getUsername());
+        log.debug("[createUser] Request recibido - userType={}, email={}", request.getUserType(), request.getEmail());
         validateUniqueConstraints(request);
+        log.debug("[createUser] Validaciones de unicidad superadas, cifrando contraseña");
         String encryptedPassword = passwordService.encryptPassword(request.getPassword());
+        log.debug("[createUser] Contraseña cifrada, obteniendo factory para tipo={}", request.getUserType());
         UserFactory factory = factoryProvider.getFactory(request.getUserType().name());
+        log.debug("[createUser] Factory obtenida: {}", factory.getClass().getSimpleName());
         UserEntity userEntity = factory.createUser(request, encryptedPassword);
+        log.debug("[createUser] Entidad construida, persistiendo en base de datos");
         try {
             UserEntity saved = userRepository.save(userEntity);
             log.info("Usuario registrado exitosamente: {} (ID: {})", saved.getUsername(), saved.getId());
+            log.debug("[createUser] Usuario persistido con ID={}", saved.getId());
             return convertToDTO(saved);
         } catch (DataAccessException e) {
+            log.debug("[createUser] Error de acceso a datos al guardar: {}", e.getMessage());
             throw new InternalServerErrorException("Error al guardar el usuario en la base de datos", e);
         } catch (Exception e) {
+            log.debug("[createUser] Error inesperado al guardar: {}", e.getMessage());
             throw new InternalServerErrorException("Error inesperado al crear el usuario", e);
         }
     }
 
     @Transactional(readOnly = true)
     public UserPageResponse getAllUsers(UserFilterInput filter, PageInput pageInput) {
+        log.debug("[getAllUsers] Consultando usuarios - filter={}, pageInput={}", filter, pageInput);
         PageRequest pageRequest = buildPageRequest(pageInput);
+        log.debug("[getAllUsers] PageRequest construido - page={}, size={}", pageRequest.getPageNumber(), pageRequest.getPageSize());
         Specification<UserEntity> spec = buildSpecification(filter);
         try {
             Page<UserEntity> page = userRepository.findAll(spec, pageRequest);
+            log.debug("[getAllUsers] Resultado: totalElements={}, totalPages={}", page.getTotalElements(), page.getTotalPages());
             List<UserDTO> content = page.getContent().stream()
                     .map(this::convertToDTO)
                     .collect(Collectors.toList());
@@ -88,22 +100,29 @@ public class UserServiceImpl implements IUserService {
                             .build())
                     .build();
         } catch (DataAccessException e) {
+            log.debug("[getAllUsers] Error de acceso a datos: {}", e.getMessage());
             throw new InternalServerErrorException("Error al consultar usuarios en la base de datos", e);
         }
     }
 
     @Transactional(readOnly = true)
     public Optional<UserDTO> getUserById(UUID id) {
+        log.debug("[getUserById] Buscando usuario con id={}", id);
         try {
-            return userRepository.findById(id).map(this::convertToDTO);
+            Optional<UserDTO> result = userRepository.findById(id).map(this::convertToDTO);
+            log.debug("[getUserById] Resultado: {}", result.isPresent() ? "encontrado" : "no encontrado");
+            return result;
         } catch (DataAccessException e) {
+            log.debug("[getUserById] Error de acceso a datos: {}", e.getMessage());
             throw new InternalServerErrorException("Error al consultar el usuario en la base de datos", e);
         }
     }
 
     public Optional<UserDTO> updateUser(UUID id, UpdateUserRequest request) {
+        log.debug("[updateUser] Actualizando usuario id={}, campos: username={}, email={}", id, request.getUsername(), request.getEmail());
         Optional<UserEntity> opt = userRepository.findById(id);
         if (opt.isEmpty()) {
+            log.debug("[updateUser] Usuario id={} no encontrado", id);
             return Optional.empty();
         }
         UserEntity userEntity = opt.get();
@@ -124,21 +143,29 @@ public class UserServiceImpl implements IUserService {
             regular.setNewsletterSubscribed(request.getNewsletterSubscribed());
         }
 
+        log.debug("[updateUser] Aplicando cambios y persistiendo usuario id={}", id);
         try {
-            return Optional.of(convertToDTO(userRepository.save(userEntity)));
+            UserDTO updated = convertToDTO(userRepository.save(userEntity));
+            log.debug("[updateUser] Usuario id={} actualizado exitosamente", id);
+            return Optional.of(updated);
         } catch (DataAccessException e) {
+            log.debug("[updateUser] Error de acceso a datos: {}", e.getMessage());
             throw new InternalServerErrorException("Error al actualizar el usuario en la base de datos", e);
         }
     }
 
     public boolean deleteUser(UUID id) {
+        log.debug("[deleteUser] Eliminando usuario id={}", id);
         if (!userRepository.existsById(id)) {
+            log.debug("[deleteUser] Usuario id={} no existe", id);
             return false;
         }
         try {
             userRepository.deleteById(id);
+            log.debug("[deleteUser] Usuario id={} eliminado exitosamente", id);
             return true;
         } catch (DataAccessException e) {
+            log.debug("[deleteUser] Error de acceso a datos: {}", e.getMessage());
             throw new InternalServerErrorException("Error al eliminar el usuario en la base de datos", e);
         }
     }
@@ -201,18 +228,25 @@ public class UserServiceImpl implements IUserService {
     }
 
     private UserDTO convertToDTO(UserEntity userEntity) {
+        UserType resolvedType = userEntity.getUserType();
+        if (resolvedType == null) {
+            resolvedType = userEntity instanceof AdminUser ? UserType.ADMIN : UserType.REGULAR;
+        }
+
         UserDTO.UserDTOBuilder builder = UserDTO.builder()
                 .id(userEntity.getId())
                 .username(userEntity.getUsername())
                 .email(userEntity.getEmail())
-                .userType(userEntity.getUserType())
+                .userType(resolvedType)
                 .permissions(userEntity.getPermissions())
                 .dashboardUrl(userEntity.getDashboardUrl())
-                .createdAt(userEntity.getCreatedAt());
+                .createdAt(userEntity.getCreatedAt() != null ? userEntity.getCreatedAt().toString() : null);
 
         if (userEntity instanceof AdminUser admin) {
             builder.adminLevel(admin.getAdminLevel())
-                    .department(admin.getDepartment());
+                    .department(admin.getDepartment())
+                    .subscriptionType(null)
+                    .newsletterSubscribed(false);
         } else if (userEntity instanceof RegularUser regular) {
             builder.subscriptionType(regular.getSubscriptionType())
                     .newsletterSubscribed(regular.isNewsletterSubscribed());

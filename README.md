@@ -4,16 +4,16 @@ Microservicio de gestión de usuarios con GraphQL y Spring Boot.
 
 ## Tecnologías
 
-| Tecnología | Versión |
-|---|---|
-| Java | 21 |
-| Spring Boot | 3.2.x |
-| Spring GraphQL | incluido en Boot |
-| Spring Data JPA + JpaSpecificationExecutor | incluido en Boot |
-| PostgreSQL | 16 |
-| Redis | 7 (caché, opcional) |
-| Lombok | latest |
-| Gradle | wrapper incluido |
+| Tecnología                                | Versión             |
+| ------------------------------------------ | -------------------- |
+| Java                                       | 21                   |
+| Spring Boot                                | 3.2.x                |
+| Spring GraphQL                             | incluido en Boot     |
+| Spring Data JPA + JpaSpecificationExecutor | incluido en Boot     |
+| PostgreSQL                                 | 16                   |
+| Redis                                      | 7 (caché, opcional) |
+| Lombok                                     | latest               |
+| Gradle                                     | wrapper incluido     |
 
 ---
 
@@ -61,10 +61,10 @@ ms-users-poc/
 docker compose -f db/docker-compose.yml up -d
 ```
 
-| Servicio | URL |
-|---|---|
-| PostgreSQL | `localhost:5432` |
-| pgAdmin | http://localhost:5050 |
+| Servicio   | URL                   |
+| ---------- | --------------------- |
+| PostgreSQL | `localhost:5432`    |
+| pgAdmin    | http://localhost:5050 |
 
 ### Caché (Redis) — opcional
 
@@ -72,9 +72,9 @@ docker compose -f db/docker-compose.yml up -d
 docker compose -f cache/docker-compose.yml up -d
 ```
 
-| Servicio | URL |
-|---|---|
-| Redis | `localhost:6379` |
+| Servicio        | URL                   |
+| --------------- | --------------------- |
+| Redis           | `localhost:6379`    |
 | Redis Commander | http://localhost:8081 |
 
 ---
@@ -95,28 +95,28 @@ docker compose -f cache/docker-compose.yml up -d
 
 ### Tipos de usuario (`UserType`)
 
-| Valor | Descripción |
-|---|---|
-| `ADMIN` | Usuario administrador con acceso total |
-| `REGULAR` | Usuario regular con acceso limitado |
+| Valor       | Descripción                           |
+| ----------- | -------------------------------------- |
+| `ADMIN`   | Usuario administrador con acceso total |
+| `REGULAR` | Usuario regular con acceso limitado    |
 
 ### Tipos de suscripción (`SubscriptionType`)
 
-| Valor | Descripción |
-|---|---|
-| `FREE` | Plan gratuito |
-| `BASIC` | Plan básico |
-| `PREMIUM` | Plan premium |
+| Valor          | Descripción     |
+| -------------- | ---------------- |
+| `FREE`       | Plan gratuito    |
+| `BASIC`      | Plan básico     |
+| `PREMIUM`    | Plan premium     |
 | `ENTERPRISE` | Plan empresarial |
 
 ---
 
 ## Arquitectura de excepciones
 
-| Capa | Excepciones |
-|---|---|
+| Capa                 | Excepciones                                                                                    |
+| -------------------- | ---------------------------------------------------------------------------------------------- |
 | **Controller** | `NotFoundException`, `ConflictException`, `BadRequestException`, `BadGatewayException` |
-| **Service** | `InternalServerErrorException` |
+| **Service**    | `InternalServerErrorException`                                                               |
 
 El servicio lanza `InternalServerErrorException` ante errores de base de datos. El controller la captura y relanza como `BadGatewayException`. El `GlobalExceptionHandler` (extiende `DataFetcherExceptionResolverAdapter`) mapea todas las excepciones a errores GraphQL tipificados.
 
@@ -362,38 +362,38 @@ curl -X POST http://localhost:8080/graphql \
 
 ### `CreateUserInput`
 
-| Campo | Regla |
-|---|---|
-| `username` | Requerido, 3–50 chars, `[a-zA-Z0-9._-]` |
-| `email` | Requerido, formato email válido |
-| `password` | Requerido, 8–100 chars, mínimo 1 mayúscula, 1 minúscula, 1 número, 1 especial (`@$!%*?&`) |
-| `userType` | Requerido, enum `ADMIN \| REGULAR` |
-| `adminLevel` | Opcional, máx 50 chars |
-| `department` | Opcional, máx 100 chars |
-| `subscriptionType` | Opcional, enum `FREE \| BASIC \| PREMIUM \| ENTERPRISE` |
-| `newsletterSubscribed` | Opcional, Boolean |
+| Campo                    | Regla                                                                                            |
+| ------------------------ | ------------------------------------------------------------------------------------------------ |
+| `username`             | Requerido, 3–50 chars,`[a-zA-Z0-9._-]`                                                        |
+| `email`                | Requerido, formato email válido                                                                 |
+| `password`             | Requerido, 8–100 chars, mínimo 1 mayúscula, 1 minúscula, 1 número, 1 especial (`@$!%*?&`) |
+| `userType`             | Requerido, enum `ADMIN \| REGULAR`                                                              |
+| `adminLevel`           | Opcional, máx 50 chars                                                                          |
+| `department`           | Opcional, máx 100 chars                                                                         |
+| `subscriptionType`     | Opcional, enum `FREE \| BASIC \| PREMIUM \| ENTERPRISE`                                           |
+| `newsletterSubscribed` | Opcional, Boolean                                                                                |
 
 ### `UpdateUserInput`
 
 Todos los campos son opcionales. Solo se actualizan los campos enviados.
 
-| Campo | Regla |
-|---|---|
-| `username` | 3–50 chars, `[a-zA-Z0-9._-]` |
-| `email` | Formato email válido |
-| `adminLevel` | Máx 50 chars |
-| `department` | Máx 100 chars |
-| `subscriptionType` | Enum `FREE \| BASIC \| PREMIUM \| ENTERPRISE` |
-| `newsletterSubscribed` | Boolean |
+| Campo                    | Regla                                        |
+| ------------------------ | -------------------------------------------- |
+| `username`             | 3–50 chars,`[a-zA-Z0-9._-]`               |
+| `email`                | Formato email válido                        |
+| `adminLevel`           | Máx 50 chars                                |
+| `department`           | Máx 100 chars                               |
+| `subscriptionType`     | Enum `FREE \| BASIC \| PREMIUM \| ENTERPRISE` |
+| `newsletterSubscribed` | Boolean                                      |
 
 ### `PageInput` — reglas del servicio
 
-| Campo | Regla |
-|---|---|
-| `page` | Mínimo 0 (default: 0) |
-| `size` | Entre 1 y 100 (default: 10) |
-| `sortBy` | Solo `createdAt`, `updatedAt`, `username`, `email` (default: `createdAt`) |
-| `sortDirection` | `ASC` o `DESC` (default: `DESC`) |
+| Campo             | Regla                                                                               |
+| ----------------- | ----------------------------------------------------------------------------------- |
+| `page`          | Mínimo 0 (default: 0)                                                              |
+| `size`          | Entre 1 y 100 (default: 10)                                                         |
+| `sortBy`        | Solo `createdAt`, `updatedAt`, `username`, `email` (default: `createdAt`) |
+| `sortDirection` | `ASC` o `DESC` (default: `DESC`)                                              |
 
 ---
 
@@ -405,16 +405,16 @@ Todos los campos son opcionales. Solo se actualizan los campos enviados.
 
 Cobertura de tests unitarios:
 
-| Clase | Tests |
-|---|---|
-| `UserServiceImplTest` | createUser, getAllUsers con paginación y filtros, getUserById, updateUser, deleteUser |
-| `UserControllerImplTest` | allUsers con/sin filtros, propagación de excepciones por capa |
-| `CreateUserRequestValidationTest` | Todas las constraints de entrada |
-| `UpdateUserRequestValidationTest` | Constraints de campos opcionales |
-| `AdminUserFactoryTest` / `RegularUserFactoryTest` | Creación de entidades por tipo |
-| `UserFactoryProviderImplTest` | Resolución de factory por tipo |
-| `GlobalExceptionHandlerTest` | Mapeo de excepciones a errores GraphQL |
-| `PasswordServiceTest` | Encriptación de contraseña |
+| Clase                                                 | Tests                                                                                  |
+| ----------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| `UserServiceImplTest`                               | createUser, getAllUsers con paginación y filtros, getUserById, updateUser, deleteUser |
+| `UserControllerImplTest`                            | allUsers con/sin filtros, propagación de excepciones por capa                         |
+| `CreateUserRequestValidationTest`                   | Todas las constraints de entrada                                                       |
+| `UpdateUserRequestValidationTest`                   | Constraints de campos opcionales                                                       |
+| `AdminUserFactoryTest` / `RegularUserFactoryTest` | Creación de entidades por tipo                                                        |
+| `UserFactoryProviderImplTest`                       | Resolución de factory por tipo                                                        |
+| `GlobalExceptionHandlerTest`                        | Mapeo de excepciones a errores GraphQL                                                 |
+| `PasswordServiceTest`                               | Encriptación de contraseña                                                           |
 
 ---
 

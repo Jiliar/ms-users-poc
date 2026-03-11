@@ -7,7 +7,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Data
@@ -21,7 +20,7 @@ public class UserDTO implements UserResult{
     private UserType userType;
     private String permissions;
     private String dashboardUrl;
-    private LocalDateTime createdAt;
+    private String createdAt;
     private String adminLevel;
     private String department;
     private SubscriptionType subscriptionType;

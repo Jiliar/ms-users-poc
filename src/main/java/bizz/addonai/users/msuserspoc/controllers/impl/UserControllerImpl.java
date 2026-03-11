@@ -50,6 +50,7 @@ public class UserControllerImpl implements IUserController {
 
     @MutationMapping
     public UserDTO createUser(@Argument @Valid CreateUserRequest input) {
+        System.out.println("DEBUG: Entrando en el método createUser del controlador.");
         try {
             return userService.createUser(input);
         } catch (InternalServerErrorException e) {

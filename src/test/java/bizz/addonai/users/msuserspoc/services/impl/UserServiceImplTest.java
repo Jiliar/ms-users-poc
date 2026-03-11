@@ -6,6 +6,7 @@ import bizz.addonai.users.msuserspoc.dtos.UpdateUserRequest;
 import bizz.addonai.users.msuserspoc.dtos.UserDTO;
 import bizz.addonai.users.msuserspoc.dtos.UserFilterInput;
 import bizz.addonai.users.msuserspoc.dtos.UserPageResponse;
+import bizz.addonai.users.msuserspoc.dtos.enums.SortDirection;
 import bizz.addonai.users.msuserspoc.exceptions.BadRequestException;
 import bizz.addonai.users.msuserspoc.exceptions.ConflictException;
 import bizz.addonai.users.msuserspoc.exceptions.InternalServerErrorException;
@@ -84,7 +85,7 @@ class UserServiceImplTest {
         when(userRepository.existsByEmail("admin@test.com")).thenReturn(false);
         when(userRepository.existsByUsername("admin1")).thenReturn(false);
         when(passwordService.encryptPassword("Pass@1234")).thenReturn("hash");
-        when(factoryProvider.getFactory("ADMIN")).thenReturn(userFactory);
+        when(factoryProvider.getFactory(UserType.ADMIN)).thenReturn(userFactory);
         when(userFactory.createUser(request, "hash")).thenReturn(entity);
         when(userRepository.save(entity)).thenReturn(entity);
 
@@ -108,7 +109,7 @@ class UserServiceImplTest {
         when(userRepository.existsByEmail("user@test.com")).thenReturn(false);
         when(userRepository.existsByUsername("user1")).thenReturn(false);
         when(passwordService.encryptPassword("Pass@1234")).thenReturn("hash");
-        when(factoryProvider.getFactory("REGULAR")).thenReturn(userFactory);
+        when(factoryProvider.getFactory(UserType.REGULAR)).thenReturn(userFactory);
         when(userFactory.createUser(request, "hash")).thenReturn(entity);
         when(userRepository.save(entity)).thenReturn(entity);
 
@@ -183,7 +184,7 @@ class UserServiceImplTest {
         when(userRepository.findAll(any(Specification.class), any(Pageable.class)))
                 .thenReturn(new PageImpl<>(List.of(a)));
 
-        PageInput pageInput = PageInput.builder().page(0).size(5).sortBy("username").sortDirection("ASC").build();
+        PageInput pageInput = PageInput.builder().page(0).size(5).sortBy("username").sortDirection(SortDirection.ASC).build();
         UserPageResponse result = userService.getAllUsers(null, pageInput);
 
         assertThat(result.getContent()).hasSize(1);

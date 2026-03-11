@@ -1,5 +1,6 @@
 package bizz.addonai.users.msuserspoc.controllers.impl;
 
+import bizz.addonai.users.msuserspoc.controllers.UserController;
 import bizz.addonai.users.msuserspoc.dtos.CreateUserRequest;
 import bizz.addonai.users.msuserspoc.dtos.PageInput;
 import bizz.addonai.users.msuserspoc.dtos.PageMetadata;
@@ -37,7 +38,7 @@ import static org.mockito.Mockito.*;
 class UserControllerImplTest {
 
     @Mock private IUserService userService;
-    @InjectMocks private UserControllerImpl controller;
+    @InjectMocks private UserController controller;
 
     private UserDTO adminDTO;
     private UserDTO regularDTO;

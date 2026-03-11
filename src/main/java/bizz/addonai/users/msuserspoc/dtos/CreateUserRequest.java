@@ -32,7 +32,7 @@ public class CreateUserRequest {
     @Pattern(regexp = "^.+$", message = "Password must contain at least one character")
     private String password;
 
-    @NotNull(message = "User type is required")
+    //@NotNull(message = "User type is required")
     private UserType userType;
 
     @Size(max = 50, message = "Admin level must not exceed 50 characters")

@@ -1,7 +1,7 @@
 package bizz.addonai.users.msuserspoc.dtos;
 
-import bizz.addonai.users.msuserspoc.models.enums.SubscriptionType;
 import bizz.addonai.users.msuserspoc.models.enums.UserType;
+import bizz.addonai.users.msuserspoc.models.enums.SubscriptionType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -13,7 +13,7 @@ import java.util.UUID;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class UserDTO implements UserResult{
+public class UserDTO{
     private UUID id;
     private String username;
     private String email;

@@ -1,6 +1,5 @@
-package bizz.addonai.users.msuserspoc.controllers.impl;
+package bizz.addonai.users.msuserspoc.controllers;
 
-import bizz.addonai.users.msuserspoc.controllers.IUserController;
 import bizz.addonai.users.msuserspoc.dtos.CreateUserRequest;
 import bizz.addonai.users.msuserspoc.dtos.PageInput;
 import bizz.addonai.users.msuserspoc.dtos.UpdateUserRequest;
@@ -26,22 +25,21 @@ import java.util.UUID;
 @Validated
 @RequiredArgsConstructor
 @Slf4j
-public class UserControllerImpl implements IUserController {
+public class UserController {
 
     private final IUserService userService;
 
     @QueryMapping
-    public UserPageResponse allUsers(@Argument UserFilterInput filter, @Argument PageInput page) {
+    public UserPageResponse allUsers(@Argument("filter") UserFilterInput filter, @Argument("page") PageInput page) {
         try {
             return userService.getAllUsers(filter, page);
         } catch (InternalServerErrorException e) {
             throw new BadGatewayException(e.getMessage(), e);
         }
-        // BadRequestException (invalid sortBy / date format) propagates as-is to GlobalExceptionHandler
     }
 
     @QueryMapping
-    public UserDTO userById(@Argument UUID id) {
+    public UserDTO userById(@Argument("id") UUID id) {
         try {
             return userService.getUserById(id)
                     .orElseThrow(() -> new NotFoundException("User not found with id: " + id));
@@ -51,7 +49,7 @@ public class UserControllerImpl implements IUserController {
     }
 
     @MutationMapping
-    public UserDTO createUser(@Argument CreateUserRequest input) {
+    public UserDTO createUser(@Argument("input") @Valid CreateUserRequest input) {
         log.info("Creating user with username: {}", input.getUsername());
         try {
             return userService.createUser(input);
@@ -61,7 +59,7 @@ public class UserControllerImpl implements IUserController {
     }
 
     @MutationMapping
-    public UserDTO updateUser(@Argument UUID id, @Argument @Valid UpdateUserRequest input) {
+    public UserDTO updateUser(@Argument("id") UUID id, @Argument("input") @Valid UpdateUserRequest input) {
         try {
             return userService.updateUser(id, input)
                     .orElseThrow(() -> new NotFoundException("User not found with id: " + id));
@@ -71,7 +69,7 @@ public class UserControllerImpl implements IUserController {
     }
 
     @MutationMapping
-    public Boolean deleteUser(@Argument UUID id) {
+    public Boolean deleteUser(@Argument("id") UUID id) {
         try {
             if (!userService.deleteUser(id)) {
                 throw new NotFoundException("User not found with id: " + id);

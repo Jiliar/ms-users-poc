@@ -58,7 +58,7 @@ public class UserServiceImpl implements IUserService {
         log.debug("[createUser] Validaciones de unicidad superadas, cifrando contraseña");
         String encryptedPassword = passwordService.encryptPassword(request.getPassword());
         log.debug("[createUser] Contraseña cifrada, obteniendo factory para tipo={}", request.getUserType());
-        UserFactory factory = factoryProvider.getFactory(request.getUserType().name());
+        UserFactory factory = factoryProvider.getFactory(request.getUserType());
         log.debug("[createUser] Factory obtenida: {}", factory.getClass().getSimpleName());
         UserEntity userEntity = factory.createUser(request, encryptedPassword);
         log.debug("[createUser] Entidad construida, persistiendo en base de datos");
@@ -202,7 +202,7 @@ public class UserServiceImpl implements IUserService {
         }
 
         Sort.Direction direction = Sort.Direction.DESC;
-        if (pageInput != null && "ASC".equalsIgnoreCase(pageInput.getSortDirection())) {
+        if (pageInput != null && "ASC".equalsIgnoreCase(pageInput.getSortDirection().name())) {
             direction = Sort.Direction.ASC;
         }
 

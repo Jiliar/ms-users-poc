@@ -1,6 +1,8 @@
 package bizz.addonai.users.msuserspoc.services.factories.impl;
 
 import bizz.addonai.users.msuserspoc.exceptions.InvalidUserTypeException;
+import bizz.addonai.users.msuserspoc.models.enums.UserType;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -24,43 +26,33 @@ class UserFactoryProviderImplTest {
 
     @Test
     void getFactory_adminType_returnsAdminFactory() {
-        UserFactory factory = provider.getFactory("ADMIN");
+        UserFactory factory = provider.getFactory(UserType.ADMIN);
         assertThat(factory).isInstanceOf(AdminUserFactory.class);
     }
 
     @Test
     void getFactory_regularType_returnsRegularFactory() {
-        UserFactory factory = provider.getFactory("REGULAR");
+        UserFactory factory = provider.getFactory(UserType.REGULAR);
         assertThat(factory).isInstanceOf(RegularUserFactory.class);
     }
 
     @Test
-    void getFactory_caseInsensitive_returnsFactory() {
-        UserFactory factory = provider.getFactory("admin");
-        assertThat(factory).isInstanceOf(AdminUserFactory.class);
-    }
-
-    @Test
     void getFactory_unknownType_throwsInvalidUserTypeException() {
-        assertThatThrownBy(() -> provider.getFactory("SUPERADMIN"))
+        assertThatThrownBy(() -> provider.getFactory(UserType.SUPER_ADMIN))
                 .isInstanceOf(InvalidUserTypeException.class)
                 .hasMessageContaining("Unknown user type");
     }
 
     @Test
     void supports_knownType_returnsTrue() {
-        assertThat(provider.supports("ADMIN")).isTrue();
-        assertThat(provider.supports("REGULAR")).isTrue();
+        assertThat(provider.supports(UserType.ADMIN)).isTrue();
+        assertThat(provider.supports(UserType.REGULAR)).isTrue();
     }
 
     @Test
     void supports_unknownType_returnsFalse() {
-        assertThat(provider.supports("GUEST")).isFalse();
+        assertThat(provider.supports(UserType.GUEST)).isFalse();
     }
 
-    @Test
-    void supports_caseInsensitive_returnsTrue() {
-        assertThat(provider.supports("admin")).isTrue();
-        assertThat(provider.supports("regular")).isTrue();
-    }
+
 }

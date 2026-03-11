@@ -1,5 +1,7 @@
 package bizz.addonai.users.msuserspoc.dtos;
 
+import bizz.addonai.users.msuserspoc.dtos.enums.SortDirection;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -21,5 +23,5 @@ public class PageInput {
     private String sortBy;
 
     /** ASC or DESC. Defaults to DESC. */
-    private String sortDirection;
+    private SortDirection sortDirection;
 }

@@ -13,6 +13,7 @@ import bizz.addonai.users.msuserspoc.exceptions.NotFoundException;
 import bizz.addonai.users.msuserspoc.services.IUserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.graphql.data.method.annotation.Argument;
 import org.springframework.graphql.data.method.annotation.MutationMapping;
 import org.springframework.graphql.data.method.annotation.QueryMapping;
@@ -24,6 +25,7 @@ import java.util.UUID;
 @Controller
 @Validated
 @RequiredArgsConstructor
+@Slf4j
 public class UserControllerImpl implements IUserController {
 
     private final IUserService userService;
@@ -49,8 +51,8 @@ public class UserControllerImpl implements IUserController {
     }
 
     @MutationMapping
-    public UserDTO createUser(@Argument @Valid CreateUserRequest input) {
-        System.out.println("DEBUG: Entrando en el método createUser del controlador.");
+    public UserDTO createUser(@Argument CreateUserRequest input) {
+        log.info("Creating user with username: {}", input.getUsername());
         try {
             return userService.createUser(input);
         } catch (InternalServerErrorException e) {

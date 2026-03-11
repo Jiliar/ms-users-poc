@@ -41,6 +41,9 @@ public class GlobalExceptionHandler extends DataFetcherExceptionResolverAdapter 
         if (ex instanceof BadGatewayException) {
             return buildError("Error de comunicación con un servicio externo: " + ex.getMessage(), ErrorType.INTERNAL_ERROR, env);
         }
+        if (ex instanceof InvalidUserTypeException) {
+            return buildError(ex.getMessage(), ErrorType.BAD_REQUEST, env);
+        }
 
         // Service layer exceptions
         if (ex instanceof InternalServerErrorException) {

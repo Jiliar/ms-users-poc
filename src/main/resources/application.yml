@@ -35,6 +35,8 @@ logging:
     bizz.addonai.users.msuserspoc.services: DEBUG
     org.springframework.transaction: DEBUG
     org.springframework.web: TRACE
+    org.springframework.graphql: TRACE
+    bizz.addonai.users.msuserspoc.controllers: TRACE
 
 
 

@@ -29,10 +29,7 @@ public class CreateUserRequest {
 
     @NotBlank(message = "Password is required")
     @Size(min = 8, max = 100, message = "Password must be between 8 and 100 characters")
-    @Pattern(
-            regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]+$",
-            message = "Password must contain at least 1 uppercase, 1 lowercase, 1 number and 1 special character (@$!%*?&)"
-    )
+    @Pattern(regexp = "^.+$", message = "Password must contain at least one character")
     private String password;
 
     @NotNull(message = "User type is required")

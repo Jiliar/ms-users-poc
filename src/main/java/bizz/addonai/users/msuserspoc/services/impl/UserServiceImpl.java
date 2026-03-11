@@ -1,5 +1,6 @@
 package bizz.addonai.users.msuserspoc.services.impl;
 
+import bizz.addonai.users.msuserspoc.config.RedisCacheConfig;
 import bizz.addonai.users.msuserspoc.dtos.CreateUserRequest;
 import bizz.addonai.users.msuserspoc.dtos.PageInput;
 import bizz.addonai.users.msuserspoc.dtos.PageMetadata;
@@ -14,13 +15,18 @@ import bizz.addonai.users.msuserspoc.models.AdminUser;
 import bizz.addonai.users.msuserspoc.models.RegularUser;
 import bizz.addonai.users.msuserspoc.models.UserEntity;
 import bizz.addonai.users.msuserspoc.models.enums.UserType;
-import bizz.addonai.users.msuserspoc.repositories.IUserRepository;
-import bizz.addonai.users.msuserspoc.repositories.specifications.UserSpecification;
+import bizz.addonai.users.msuserspoc.repositories.jpa.IUserRepository;
+import bizz.addonai.users.msuserspoc.repositories.security.IPasswordRepository;
+import bizz.addonai.users.msuserspoc.repositories.jpa.specs.UserSpecification;
 import bizz.addonai.users.msuserspoc.services.IUserService;
 import bizz.addonai.users.msuserspoc.services.factories.IUserFactoryProvider;
-import bizz.addonai.users.msuserspoc.services.factories.impl.UserFactory;
+import bizz.addonai.users.msuserspoc.services.factories.users.IUserFactory;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.dao.DataAccessException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -49,45 +55,47 @@ public class UserServiceImpl implements IUserService {
 
     private final IUserRepository userRepository;
     private final IUserFactoryProvider factoryProvider;
-    private final PasswordService passwordService;
+    private final IPasswordRepository passwordService;
 
+    @Override
+    @CacheEvict(value = RedisCacheConfig.CACHE_USERS_PAGINATED, allEntries = true)
     public UserDTO createUser(CreateUserRequest request) {
         log.info("Iniciando registro de usuario: {}", request.getUsername());
         log.debug("[createUser] Request recibido - userType={}, email={}", request.getUserType(), request.getEmail());
         validateUniqueConstraints(request);
-        log.debug("[createUser] Validaciones de unicidad superadas, cifrando contraseña");
+        
         String encryptedPassword = passwordService.encryptPassword(request.getPassword());
-        log.debug("[createUser] Contraseña cifrada, obteniendo factory para tipo={}", request.getUserType());
-        UserFactory factory = factoryProvider.getFactory(request.getUserType());
-        log.debug("[createUser] Factory obtenida: {}", factory.getClass().getSimpleName());
+        IUserFactory factory = factoryProvider.getFactory(request.getUserType());
         UserEntity userEntity = factory.createUser(request, encryptedPassword);
-        log.debug("[createUser] Entidad construida, persistiendo en base de datos");
+        
         try {
             UserEntity saved = userRepository.save(userEntity);
             log.info("Usuario registrado exitosamente: {} (ID: {})", saved.getUsername(), saved.getId());
-            log.debug("[createUser] Usuario persistido con ID={}", saved.getId());
             return convertToDTO(saved);
         } catch (DataAccessException e) {
-            log.debug("[createUser] Error de acceso a datos al guardar: {}", e.getMessage());
+            log.error("[createUser] Error de acceso a datos al guardar: {}", e.getMessage());
             throw new InternalServerErrorException("Error al guardar el usuario en la base de datos", e);
         } catch (Exception e) {
-            log.debug("[createUser] Error inesperado al guardar: {}", e.getMessage());
+            log.error("[createUser] Error inesperado al guardar: {}", e.getMessage());
             throw new InternalServerErrorException("Error inesperado al crear el usuario", e);
         }
     }
 
+    // Cacheamos los resultados paginados usando como llave los parámetros de búsqueda
+    @Override
     @Transactional(readOnly = true)
+    @Cacheable(value = RedisCacheConfig.CACHE_USERS_PAGINATED, key = "{#filter, #pageInput}")
     public UserPageResponse getAllUsers(UserFilterInput filter, PageInput pageInput) {
         log.debug("[getAllUsers] Consultando usuarios - filter={}, pageInput={}", filter, pageInput);
         PageRequest pageRequest = buildPageRequest(pageInput);
-        log.debug("[getAllUsers] PageRequest construido - page={}, size={}", pageRequest.getPageNumber(), pageRequest.getPageSize());
         Specification<UserEntity> spec = buildSpecification(filter);
+        
         try {
             Page<UserEntity> page = userRepository.findAll(spec, pageRequest);
-            log.debug("[getAllUsers] Resultado: totalElements={}, totalPages={}", page.getTotalElements(), page.getTotalPages());
             List<UserDTO> content = page.getContent().stream()
                     .map(this::convertToDTO)
                     .collect(Collectors.toList());
+                    
             return UserPageResponse.builder()
                     .content(content)
                     .pageInfo(PageMetadata.builder()
@@ -100,29 +108,36 @@ public class UserServiceImpl implements IUserService {
                             .build())
                     .build();
         } catch (DataAccessException e) {
-            log.debug("[getAllUsers] Error de acceso a datos: {}", e.getMessage());
+            log.error("[getAllUsers] Error de acceso a datos: {}", e.getMessage());
             throw new InternalServerErrorException("Error al consultar usuarios en la base de datos", e);
         }
     }
 
+    // Cacheamos el usuario específico. Si el Optional está vacío, no se guarda en caché gracias a 'unless'
+    @Override
     @Transactional(readOnly = true)
+    @Cacheable(value = RedisCacheConfig.CACHE_USER_BY_ID, key = "#id", unless = "#result.isEmpty()")
     public Optional<UserDTO> getUserById(UUID id) {
-        log.debug("[getUserById] Buscando usuario con id={}", id);
+        log.debug("[getUserById] Buscando usuario en DB con id={}", id);
         try {
-            Optional<UserDTO> result = userRepository.findById(id).map(this::convertToDTO);
-            log.debug("[getUserById] Resultado: {}", result.isPresent() ? "encontrado" : "no encontrado");
-            return result;
+            return userRepository.findById(id).map(this::convertToDTO);
         } catch (DataAccessException e) {
-            log.debug("[getUserById] Error de acceso a datos: {}", e.getMessage());
+            log.error("[getUserById] Error de acceso a datos: {}", e.getMessage());
             throw new InternalServerErrorException("Error al consultar el usuario en la base de datos", e);
         }
     }
 
+    // Al actualizar, invalidamos tanto el usuario específico como las listas paginadas
+    @Override
+    @Caching(evict = {
+        @CacheEvict(value = RedisCacheConfig.CACHE_USER_BY_ID, key = "#id"),
+        @CacheEvict(value = RedisCacheConfig.CACHE_USER_BY_EMAIL, allEntries = true),
+        @CacheEvict(value = RedisCacheConfig.CACHE_USERS_PAGINATED, allEntries = true)
+    })
     public Optional<UserDTO> updateUser(UUID id, UpdateUserRequest request) {
         log.debug("[updateUser] Actualizando usuario id={}, campos: username={}, email={}", id, request.getUsername(), request.getEmail());
         Optional<UserEntity> opt = userRepository.findById(id);
         if (opt.isEmpty()) {
-            log.debug("[updateUser] Usuario id={} no encontrado", id);
             return Optional.empty();
         }
         UserEntity userEntity = opt.get();
@@ -143,36 +158,35 @@ public class UserServiceImpl implements IUserService {
             regular.setNewsletterSubscribed(request.getNewsletterSubscribed());
         }
 
-        log.debug("[updateUser] Aplicando cambios y persistiendo usuario id={}", id);
         try {
             UserDTO updated = convertToDTO(userRepository.save(userEntity));
-            log.debug("[updateUser] Usuario id={} actualizado exitosamente", id);
             return Optional.of(updated);
         } catch (DataAccessException e) {
-            log.debug("[updateUser] Error de acceso a datos: {}", e.getMessage());
+            log.error("[updateUser] Error de acceso a datos: {}", e.getMessage());
             throw new InternalServerErrorException("Error al actualizar el usuario en la base de datos", e);
         }
     }
 
+    // Al eliminar, invalidamos todas las cachés asociadas a los usuarios
+    @Override
+    @Caching(evict = {
+        @CacheEvict(value = RedisCacheConfig.CACHE_USER_BY_ID, key = "#id"),
+        @CacheEvict(value = RedisCacheConfig.CACHE_USER_BY_EMAIL, allEntries = true),
+        @CacheEvict(value = RedisCacheConfig.CACHE_USERS_PAGINATED, allEntries = true)
+    })
     public boolean deleteUser(UUID id) {
         log.debug("[deleteUser] Eliminando usuario id={}", id);
         if (!userRepository.existsById(id)) {
-            log.debug("[deleteUser] Usuario id={} no existe", id);
             return false;
         }
         try {
             userRepository.deleteById(id);
-            log.debug("[deleteUser] Usuario id={} eliminado exitosamente", id);
             return true;
         } catch (DataAccessException e) {
-            log.debug("[deleteUser] Error de acceso a datos: {}", e.getMessage());
+            log.error("[deleteUser] Error de acceso a datos: {}", e.getMessage());
             throw new InternalServerErrorException("Error al eliminar el usuario en la base de datos", e);
         }
     }
-
-    // ==========================================
-    // Private helpers
-    // ==========================================
 
     private void validateUniqueConstraints(CreateUserRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {
@@ -211,7 +225,6 @@ public class UserServiceImpl implements IUserService {
 
     private Specification<UserEntity> buildSpecification(UserFilterInput filter) {
         if (filter == null) return UserSpecification.withFilters(null);
-        // Eager date validation — the Specification lambda is lazy, so we validate before handing it to JPA
         validateDateField(filter.getStartDate(), "startDate");
         validateDateField(filter.getEndDate(), "endDate");
         return UserSpecification.withFilters(filter);

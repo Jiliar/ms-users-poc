@@ -1,15 +1,16 @@
-package bizz.addonai.users.msuserspoc.services.factories.impl;
+package bizz.addonai.users.msuserspoc.services.factories.users.impl;
 
 import bizz.addonai.users.msuserspoc.dtos.CreateUserRequest;
 import bizz.addonai.users.msuserspoc.models.RegularUser;
 import bizz.addonai.users.msuserspoc.models.UserEntity;
 import bizz.addonai.users.msuserspoc.models.enums.SubscriptionType;
+import bizz.addonai.users.msuserspoc.services.factories.users.IUserFactory;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 @Slf4j
 @Component
-public class RegularUserFactory implements UserFactory {
+public class RegularUserFactory implements IUserFactory {
 
     @Override
     public UserEntity createUser(CreateUserRequest request, String encryptedPassword) {
@@ -41,6 +42,5 @@ public class RegularUserFactory implements UserFactory {
     @Override
     public void validateUserData(CreateUserRequest request) {
         log.debug("[RegularUserFactory] validateUserData - subscriptionType={}", request.getSubscriptionType());
-        // subscriptionType is already type-safe via SubscriptionType enum
     }
 }

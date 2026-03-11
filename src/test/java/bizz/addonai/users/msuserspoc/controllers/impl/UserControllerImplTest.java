@@ -1,6 +1,6 @@
 package bizz.addonai.users.msuserspoc.controllers.impl;
 
-import bizz.addonai.users.msuserspoc.controllers.UserController;
+import bizz.addonai.users.msuserspoc.controllers.UserControllerImpl;
 import bizz.addonai.users.msuserspoc.dtos.CreateUserRequest;
 import bizz.addonai.users.msuserspoc.dtos.PageInput;
 import bizz.addonai.users.msuserspoc.dtos.PageMetadata;
@@ -16,6 +16,7 @@ import bizz.addonai.users.msuserspoc.exceptions.NotFoundException;
 import bizz.addonai.users.msuserspoc.models.enums.SubscriptionType;
 import bizz.addonai.users.msuserspoc.models.enums.UserType;
 import bizz.addonai.users.msuserspoc.services.IUserService;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -38,7 +39,7 @@ import static org.mockito.Mockito.*;
 class UserControllerImplTest {
 
     @Mock private IUserService userService;
-    @InjectMocks private UserController controller;
+    @InjectMocks private UserControllerImpl controller;
 
     private UserDTO adminDTO;
     private UserDTO regularDTO;

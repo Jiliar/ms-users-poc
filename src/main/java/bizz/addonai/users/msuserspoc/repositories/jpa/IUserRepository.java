@@ -1,11 +1,12 @@
-package bizz.addonai.users.msuserspoc.repositories;
+package bizz.addonai.users.msuserspoc.repositories.jpa;
 
-import bizz.addonai.users.msuserspoc.models.UserEntity;
-import bizz.addonai.users.msuserspoc.models.enums.UserType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
+
+import bizz.addonai.users.msuserspoc.models.UserEntity;
+import bizz.addonai.users.msuserspoc.models.enums.UserType;
 
 import java.util.List;
 import java.util.Optional;

@@ -1,6 +1,5 @@
 package bizz.addonai.users.msuserspoc.models;
 
-import bizz.addonai.users.msuserspoc.models.enums.UserType;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -9,6 +8,8 @@ import lombok.experimental.SuperBuilder;
 import org.hibernate.annotations.GenericGenerator;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
+
+import bizz.addonai.users.msuserspoc.models.enums.UserType;
 
 import java.time.LocalDateTime;
 import java.util.UUID;

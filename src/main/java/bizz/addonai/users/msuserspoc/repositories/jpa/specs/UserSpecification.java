@@ -1,4 +1,4 @@
-package bizz.addonai.users.msuserspoc.repositories.specifications;
+package bizz.addonai.users.msuserspoc.repositories.jpa.specs;
 
 import bizz.addonai.users.msuserspoc.dtos.UserFilterInput;
 import bizz.addonai.users.msuserspoc.models.UserEntity;

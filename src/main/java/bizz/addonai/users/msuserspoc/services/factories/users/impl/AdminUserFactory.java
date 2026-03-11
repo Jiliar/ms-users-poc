@@ -1,16 +1,17 @@
-package bizz.addonai.users.msuserspoc.services.factories.impl;
+package bizz.addonai.users.msuserspoc.services.factories.users.impl;
 
 import bizz.addonai.users.msuserspoc.dtos.CreateUserRequest;
 import bizz.addonai.users.msuserspoc.exceptions.InvalidUserTypeException;
 import bizz.addonai.users.msuserspoc.models.AdminUser;
 import bizz.addonai.users.msuserspoc.models.UserEntity;
 import bizz.addonai.users.msuserspoc.models.enums.UserType;
+import bizz.addonai.users.msuserspoc.services.factories.users.IUserFactory;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 @Slf4j
 @Component
-public class AdminUserFactory implements UserFactory {
+public class AdminUserFactory implements IUserFactory {
 
     @Override
     public UserEntity createUser(CreateUserRequest request, String encryptedPassword) {

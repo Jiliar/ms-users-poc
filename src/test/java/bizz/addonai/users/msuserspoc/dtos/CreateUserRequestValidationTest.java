@@ -1,7 +1,5 @@
 package bizz.addonai.users.msuserspoc.dtos;
 
-import bizz.addonai.users.msuserspoc.models.enums.SubscriptionType;
-import bizz.addonai.users.msuserspoc.models.enums.UserType;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validation;
 import jakarta.validation.Validator;
@@ -9,6 +7,9 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
+
+import bizz.addonai.users.msuserspoc.models.enums.SubscriptionType;
+import bizz.addonai.users.msuserspoc.models.enums.UserType;
 
 import java.util.Set;
 

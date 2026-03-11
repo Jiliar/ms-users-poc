@@ -7,6 +7,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import bizz.addonai.users.msuserspoc.repositories.security.impl.PasswordRepositoryImpl;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.*;
@@ -17,11 +19,11 @@ class PasswordServiceTest {
     @Mock
     private PasswordEncoder passwordEncoder;
 
-    private PasswordService passwordService;
+    private PasswordRepositoryImpl passwordService;
 
     @BeforeEach
     void setUp() {
-        passwordService = new PasswordService(passwordEncoder);
+        passwordService = new PasswordRepositoryImpl(passwordEncoder);
     }
 
     // --- encryptPassword ---

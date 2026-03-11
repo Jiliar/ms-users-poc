@@ -14,9 +14,12 @@ import bizz.addonai.users.msuserspoc.models.AdminUser;
 import bizz.addonai.users.msuserspoc.models.RegularUser;
 import bizz.addonai.users.msuserspoc.models.enums.SubscriptionType;
 import bizz.addonai.users.msuserspoc.models.enums.UserType;
-import bizz.addonai.users.msuserspoc.repositories.IUserRepository;
-import bizz.addonai.users.msuserspoc.services.factories.IUserFactoryProvider;
-import bizz.addonai.users.msuserspoc.services.factories.impl.UserFactory;
+import bizz.addonai.users.msuserspoc.repositories.jpa.IUserRepository;
+import bizz.addonai.users.msuserspoc.repositories.security.impl.PasswordRepositoryImpl;
+import bizz.addonai.users.msuserspoc.services.jpa.factories.IUserFactoryProvider;
+import bizz.addonai.users.msuserspoc.services.jpa.factories.impl.UserFactory;
+import bizz.addonai.users.msuserspoc.services.jpa.impl.UserJpaServiceImpl;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -42,8 +45,8 @@ class UserServiceImplTest {
 
     @Mock private IUserRepository userRepository;
     @Mock private IUserFactoryProvider factoryProvider;
-    @Mock private PasswordService passwordService;
-    @Mock private UserFactory userFactory;
+    @Mock private PasswordRepositoryImpl passwordService;
+    @Mock private IUserFactory userFactory;
 
     private UserServiceImpl userService;
 

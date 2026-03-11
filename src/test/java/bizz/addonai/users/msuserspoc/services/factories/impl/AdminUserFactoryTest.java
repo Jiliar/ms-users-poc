@@ -5,6 +5,8 @@ import bizz.addonai.users.msuserspoc.exceptions.InvalidUserTypeException;
 import bizz.addonai.users.msuserspoc.models.AdminUser;
 import bizz.addonai.users.msuserspoc.models.UserEntity;
 import bizz.addonai.users.msuserspoc.models.enums.UserType;
+import bizz.addonai.users.msuserspoc.services.jpa.factories.impl.AdminUserFactory;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 

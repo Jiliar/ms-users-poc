@@ -1,20 +1,22 @@
-package bizz.addonai.users.msuserspoc.services.impl;
+package bizz.addonai.users.msuserspoc.repositories.security.impl;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import bizz.addonai.users.msuserspoc.repositories.security.IPasswordRepository;
 
 import java.security.SecureRandom;
 import java.util.Base64;
 
 @Slf4j
 @Service
-public class PasswordService {
+public class PasswordRepositoryImpl implements IPasswordRepository {
 
     private final PasswordEncoder passwordEncoder;
     private final SecureRandom secureRandom;
 
-    public PasswordService(PasswordEncoder passwordEncoder) {
+    public PasswordRepositoryImpl(PasswordEncoder passwordEncoder) {
         this.passwordEncoder = passwordEncoder;
         this.secureRandom = new SecureRandom();
     }

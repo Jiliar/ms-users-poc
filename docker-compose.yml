@@ -10,10 +10,9 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      # Usamos un volumen nombrado de Docker (más fiable en Linux)
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-um_admin} -d ${DB_NAME:-usermanagement}"]
+      test: [ "CMD-SHELL", "pg_isready -U ${DB_USER:-um_admin} -d ${DB_NAME:-usermanagement}" ]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -35,8 +34,24 @@ services:
     networks:
       - um-network
 
+  redis:
+    image: redis:7-alpine
+    container_name: redis-cache
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/var/lib/redis/data
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
 volumes:
+  redis_data:
   postgres_data:
+
 
 networks:
   um-network:

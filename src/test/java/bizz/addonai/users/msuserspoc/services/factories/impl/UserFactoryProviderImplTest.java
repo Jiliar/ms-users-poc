@@ -2,6 +2,11 @@ package bizz.addonai.users.msuserspoc.services.factories.impl;
 
 import bizz.addonai.users.msuserspoc.exceptions.InvalidUserTypeException;
 import bizz.addonai.users.msuserspoc.models.enums.UserType;
+import bizz.addonai.users.msuserspoc.services.factories.users.IUserFactory;
+import bizz.addonai.users.msuserspoc.services.jpa.factories.impl.AdminUserFactory;
+import bizz.addonai.users.msuserspoc.services.jpa.factories.impl.RegularUserFactory;
+import bizz.addonai.users.msuserspoc.services.jpa.factories.impl.UserFactory;
+import bizz.addonai.users.msuserspoc.services.jpa.factories.impl.UserFactoryProviderImpl;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -26,13 +31,13 @@ class UserFactoryProviderImplTest {
 
     @Test
     void getFactory_adminType_returnsAdminFactory() {
-        UserFactory factory = provider.getFactory(UserType.ADMIN);
+        IUserFactory factory = provider.getFactory(UserType.ADMIN);
         assertThat(factory).isInstanceOf(AdminUserFactory.class);
     }
 
     @Test
     void getFactory_regularType_returnsRegularFactory() {
-        UserFactory factory = provider.getFactory(UserType.REGULAR);
+        IUserFactory factory = provider.getFactory(UserType.REGULAR);
         assertThat(factory).isInstanceOf(RegularUserFactory.class);
     }
 

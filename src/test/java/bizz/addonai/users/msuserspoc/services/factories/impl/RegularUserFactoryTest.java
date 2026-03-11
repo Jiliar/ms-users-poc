@@ -4,6 +4,8 @@ import bizz.addonai.users.msuserspoc.dtos.CreateUserRequest;
 import bizz.addonai.users.msuserspoc.models.RegularUser;
 import bizz.addonai.users.msuserspoc.models.UserEntity;
 import bizz.addonai.users.msuserspoc.models.enums.SubscriptionType;
+import bizz.addonai.users.msuserspoc.services.jpa.factories.impl.RegularUserFactory;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 

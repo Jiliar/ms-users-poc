@@ -25,12 +25,26 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-validation'
     implementation 'org.springframework.boot:spring-boot-starter-security'
     implementation 'com.graphql-java:graphql-java-extended-scalars:21.0'
+
     // PostgreSQL
     runtimeOnly 'org.postgresql:postgresql'
 
     // Lombok
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
+
+    // Cache abstraction de Spring
+    implementation 'org.springframework.boot:spring-boot-starter-cache'
+    
+    // Redis
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+    
+    // Serializer JSON para Redis (recomendado sobre JDK serialization)
+    implementation 'com.fasterxml.jackson.core:jackson-databind'
+    
+    // Connection pool Lettuce (ya viene con spring-boot-starter-data-redis)
+    // pero explícito para configuración avanzada
+    implementation 'io.lettuce:lettuce-core'
 
     // Testing
     testImplementation 'org.springframework.boot:spring-boot-starter-test'

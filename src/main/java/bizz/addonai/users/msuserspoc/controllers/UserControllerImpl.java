@@ -25,7 +25,7 @@ import java.util.UUID;
 @Validated
 @RequiredArgsConstructor
 @Slf4j
-public class UserController {
+public class UserControllerImpl {
 
     private final IUserService userService;
 
